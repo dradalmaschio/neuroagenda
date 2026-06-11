@@ -17,7 +17,7 @@ main,nav,.ov,.toast{position:relative;z-index:1}
 .tab{background:none;border:none;color:var(--mt);padding:7px 10px;border-radius:var(--rs);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
 .tab:hover{color:var(--tx);background:var(--sf)}.tab.on{color:var(--ac);background:var(--sf)}
 .tab.ia{color:#A5B4FC}.tab.ia.on{background:linear-gradient(135deg,#1e2d4a,#25215a);color:#C4B5FD}
-main{padding-top:56px}
+main{padding-top:90px}
 .view{display:none;padding:14px;max-width:720px;margin:0 auto}.view.on{display:block}
 .sec{margin-bottom:20px}
 .sec-ttl{font-size:11px;font-weight:600;color:var(--mt2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px}
@@ -194,7 +194,7 @@ select option{background:var(--bg)}
 .razon-tag{font-size:10px;color:var(--mt2);margin-top:3px;font-style:italic}
 
 /* ── Google Drive sync ── */
-.drive-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--sf2);border-bottom:1px solid var(--bd);font-size:11px;color:var(--mt)}
+.drive-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--sf2);border-bottom:1px solid var(--bd);font-size:11px;color:var(--mt);position:fixed;top:56px;left:0;right:0;z-index:199;height:32px}
 .drive-dot{width:8px;height:8px;border-radius:50%;background:var(--bd);flex-shrink:0;transition:background .3s}
 .drive-dot.ok{background:#22c55e}
 .drive-dot.saving{background:#f59e0b;animation:pulse .8s infinite}
