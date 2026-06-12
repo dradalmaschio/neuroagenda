@@ -193,18 +193,15 @@ select option{background:var(--bg)}
 .img-overlay-close{position:fixed;top:14px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2001}
 .razon-tag{font-size:10px;color:var(--mt2);margin-top:3px;font-style:italic}
 
-/* ── Google Drive sync ── */
+/* ── Dropbox sync ── */
 .drive-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--sf2);border-bottom:1px solid var(--bd);font-size:11px;color:var(--mt);position:fixed;top:56px;left:0;right:0;z-index:199;height:32px}
 .drive-dot{width:8px;height:8px;border-radius:50%;background:var(--bd);flex-shrink:0;transition:background .3s}
 .drive-dot.ok{background:#22c55e}
-.drive-dot.saving{background:#f59e0b;animation:pulse .8s infinite}
+.drive-dot.saving{background:#f59e0b;animation:dbpulse .8s infinite}
 .drive-dot.err{background:#ef4444}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.drive-login-btn{margin-left:auto;background:var(--ac);color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:600}
-.drive-login-btn:hover{opacity:.85}
+@keyframes dbpulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <nav class="nav">
@@ -220,10 +217,10 @@ select option{background:var(--bg)}
 </nav>
 
 <div class="drive-bar" id="drive-bar">
-  <div class="drive-dot" id="drive-dot"></div>
-  <span id="drive-status">Google Drive: no conectado</span>
-  <button class="drive-login-btn" id="drive-login-btn" onclick="driveLogin()">Conectar</button>
+  <div class="drive-dot ok" id="drive-dot"></div>
+  <span id="drive-status">Dropbox: listo</span>
 </div>
+
 <main>
 
 <div id="view-home" class="view on">
@@ -1070,6 +1067,116 @@ function importarTodo(){
   };
   input.click();
 }
+
+
+
+
+// ═══════════════════════════════════════════════════════════
+//  DROPBOX AUTO-SYNC
+// ═══════════════════════════════════════════════════════════
+const DBX_TOKEN = 'sl.u.AGj_7Wfm9O1h8uZlC0DU3Nwr8RDfjYenviO6lZtm6JFp5gQV3V-lqDqc-c1j2HrFQ4jTVr40n1RJJfpXfisz7KlkBqs2JL4WiyMBlsRlLH42RewybBRbBgkr4rWYKXqcX4pwQGTLcQGAHLorS-Rz8VEcEGiO_M9IC4hC-9jjkf9UaSZqTfQAYPppCtLVORWAN_duFAt6-Ef2dSBfLeouvC-zEK-HuHR_N-0sZop3ns02Uj35_PPtg5QfUDhpJQOwEM1uIGbWjw8yuExBwx7YYmphszJyn1xmJ3FAZITDjCohwTq5vXgAvOQJ0_Xy2Lg3ANe3ptPmyoHw_Z3zPDyiKVw_Vka9dypBQbJ0ZxJu-jdy-UIMK62oq-A0cvAN4ufUjIwgu9ezYDUkET5ur1H3zd9EYiuxubsR3fgIG4WeZ-f86aJVhD6LUVgVRpoAn_9ewhMxiGDra0ygd3gGy70ZmlQrP7DYsOh_Pok3AM3OGbcEZzWO2OFfI807ggKGJKYCE4G0enIAFLD00xb1MRgyGy02zMnWNnwI1HmUPWBusRb5Royotmy-CCxI3GRvK1z_fGToD-LHGebCszt51qqiXrSmHWLF1jin69wKvIZ7HgvAlLMLZMSdjCF4DOVZPfJJSecGpn5h9WCudf7W_FqrLkAjbnIr5iNTFd70aRyV04ZVpnvoNmwigvacDsLSPwdMvtqId5JdyKhouC9CDEOP-xZTr55qgbZBWKtisZ9n2bbhg4T4gDsSIj9v-y1STuhsv8qg64RJXSKD5dgKgb1aGzyzvdn1srXXgLkg4bUFKXusRvvOhLmVKSGE_xhxTa9q4wxXBjIWGvmz-52zF04gJ2kgN67OnZUvPIjz_KvUFJllZygfW2DBxzh0ZWeooo_KbjK5W54A1PJuu4GgFc9FztVOa17eJCJF_ieNexxhc95JfWvsPXTEjQmhnafbDOeTNCu9lvBHMq4HKtrBj8tlLBacXV8LvHUeFneE7wMX3Nvoru_5ftgLweArWYo9bBPqe--iD9NgHy7wGvuaqRzA1hUi5OJKr2TVJiRJK23Pk-iDn2g-rFh9hvE2kxHJSWsstVD_F_N_3iWpELwxM8JhqWfq6o5tgMPyxsqezdZV-XqVWWwmJ0UtXGBrGGp2H3SGVXTOlQgSTSy4RuNoRH9ESCZ68vaRZdSnHlaAmqNmVihZdFYjC6JA86l615amFsmpD1rKlwkDmMGmLNG0_S0S_YI3fLKXu9OqhwJ9krs21cm43gMfn7BtsQTDtHstW_UoXa_9PSDIcg76Oovb_SGmQZ1MJHuFveivNHjuGF7SsUPS0oBigGrofr-dWsZe9eLQIl8k1M4SeTqWtoquynoIznBd';
+const DBX_PATH = '/NeuroAgenda_backup.json';
+let dbxSaveTimer = null, dbxSaving = false;
+
+function dbxSetStatus(state, msg){
+  const dot = document.getElementById('drive-dot');
+  const status = document.getElementById('drive-status');
+  if(!dot || !status) return;
+  dot.className = 'drive-dot ' + (state||'');
+  status.textContent = msg;
+}
+
+function buildBackupPayload(){
+  const patImgs = {};
+  for(let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('na5_imgs_')){
+      const pid = k.replace('na5_imgs_','');
+      try{ patImgs[pid] = JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){}
+    }
+  }
+  return {
+    version: 5, fecha: new Date().toISOString(),
+    extraPats: L('ep',[]), patEdits: L('pe',{}), dxPropio: L('dxp',{}), dxIA: L('dxi',{}),
+    notas2: L('n2',{}), turnos: L('tu',{}), cobros: L('co',[]), gastos: L('ga',[]),
+    patImgs: patImgs
+  };
+}
+
+async function dbxSaveNow(){
+  if(dbxSaving) return;
+  dbxSaving = true;
+  dbxSetStatus('saving','Guardando en Dropbox...');
+  try{
+    const payload = JSON.stringify(buildBackupPayload());
+    const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + DBX_TOKEN,
+        'Content-Type': 'application/octet-stream',
+        'Dropbox-API-Arg': JSON.stringify({
+          path: DBX_PATH,
+          mode: 'overwrite',
+          autorename: false,
+          mute: true
+        })
+      },
+      body: payload
+    });
+    if(res.ok){
+      const now = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      dbxSetStatus('ok','Dropbox: guardado ' + now + ' ✓');
+    } else {
+      const err = await res.json();
+      console.error('Dropbox error:', err);
+      dbxSetStatus('err','Error al guardar en Dropbox');
+    }
+  } catch(e){
+    dbxSetStatus('err','Sin conexión');
+  }
+  dbxSaving = false;
+}
+
+function dbxScheduleSave(){
+  clearTimeout(dbxSaveTimer);
+  dbxSaveTimer = setTimeout(dbxSaveNow, 2000);
+}
+
+// Restore from Dropbox on first load if no local data
+async function dbxRestoreIfNeeded(){
+  const hasData = L('ep',[]).length > 0 || Object.keys(L('pe',{})).length > 0 || Object.keys(L('n2',{})).length > 0;
+  if(hasData){ dbxSetStatus('ok','Dropbox: activo ✓'); return; }
+  try{
+    dbxSetStatus('saving','Restaurando desde Dropbox...');
+    const res = await fetch('https://content.dropboxapi.com/2/files/download', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + DBX_TOKEN,
+        'Dropbox-API-Arg': JSON.stringify({path: DBX_PATH})
+      }
+    });
+    if(!res.ok){ dbxSetStatus('ok','Dropbox: listo ✓'); return; }
+    const data = await res.json();
+    if(!data.version){ dbxSetStatus('ok','Dropbox: listo ✓'); return; }
+    S('ep',data.extraPats||[]); S('pe',data.patEdits||{}); S('dxp',data.dxPropio||{});
+    S('dxi',data.dxIA||{}); S('n2',data.notas2||{}); S('tu',data.turnos||{});
+    S('co',data.cobros||[]); S('ga',data.gastos||[]);
+    if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
+    extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
+    notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]);
+    dbxSetStatus('ok','Dropbox: datos restaurados ✓');
+    buildHome(); rpts();
+  } catch(e){
+    dbxSetStatus('ok','Dropbox: listo ✓');
+  }
+}
+
+// Hook into S() to auto-save on every change
+const _origS2 = S;
+window.S = function(k,v){ _origS2(k,v); dbxScheduleSave(); };
+
+// Init on load
+window.addEventListener('load', function(){ dbxRestoreIfNeeded(); });
 
 </script>
 
