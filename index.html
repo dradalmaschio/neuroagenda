@@ -539,10 +539,11 @@ function selMPt(id,nom){
 }
 function confT(){
   const pid=document.getElementById('mpid').value;
-  if(!pid){alert('Seleccion\u00e1 un paciente');return;}
-  const p=getPat(pid);if(!p)return;
+  const msVal=document.getElementById('ms').value.trim();
+  const pacNombre=pid?(getPat(pid)?.nombre||msVal):msVal;
+  if(!pacNombre){alert('Escribí el nombre del paciente');return;}
   if(!turnos[mslot.dk])turnos[mslot.dk]={};
-  turnos[mslot.dk][mslot.hora]={pacienteId:pid,pacienteNombre:p.nombre,motivo:document.getElementById('mmot').value.trim(),tipo:mslot.tipo};
+  turnos[mslot.dk][mslot.hora]={pacienteId:pid||'',pacienteNombre:pacNombre,motivo:document.getElementById('mmot').value.trim(),tipo:mslot.tipo};
   S('tu',turnos);document.getElementById('ov-turno').classList.add('h');buildAg();buildHome();toast('Turno asignado');
 }
 function delT(dk2,hora){if(!confirm('Cancelar turno?'))return;if(turnos[dk2])delete turnos[dk2][hora];S('tu',turnos);buildAg();buildHome();toast('Turno cancelado');}
@@ -928,6 +929,7 @@ function finSrch(){
 function selFinP(id,nom){document.getElementById('fin-pac-id').value=id;document.getElementById('fin-pac-sel').textContent='\u2713 '+nom;document.getElementById('fin-pac-r').innerHTML='';document.getElementById('fin-pac-s').value=nom;}
 function regCobro(){
   const pid=document.getElementById('fin-pac-id').value,p=pid?getPat(pid):null;
+  const freeNom=document.getElementById('fin-pac-s').value.trim();
   const t=TIPOS.find(x=>x.id===selTipo);
   const senia=parseFloat(document.getElementById('fin-senia').value)||0;
   const pago=parseFloat(document.getElementById('fin-pago').value)||0;
@@ -1127,7 +1129,7 @@ function importarTodo(){
 // ═══════════════════════════════════════════════════════════
 //  DROPBOX AUTO-SYNC
 // ═══════════════════════════════════════════════════════════
-const DBX_TOKEN = 'sl.u.AGj_7Wfm9O1h8uZlC0DU3Nwr8RDfjYenviO6lZtm6JFp5gQV3V-lqDqc-c1j2HrFQ4jTVr40n1RJJfpXfisz7KlkBqs2JL4WiyMBlsRlLH42RewybBRbBgkr4rWYKXqcX4pwQGTLcQGAHLorS-Rz8VEcEGiO_M9IC4hC-9jjkf9UaSZqTfQAYPppCtLVORWAN_duFAt6-Ef2dSBfLeouvC-zEK-HuHR_N-0sZop3ns02Uj35_PPtg5QfUDhpJQOwEM1uIGbWjw8yuExBwx7YYmphszJyn1xmJ3FAZITDjCohwTq5vXgAvOQJ0_Xy2Lg3ANe3ptPmyoHw_Z3zPDyiKVw_Vka9dypBQbJ0ZxJu-jdy-UIMK62oq-A0cvAN4ufUjIwgu9ezYDUkET5ur1H3zd9EYiuxubsR3fgIG4WeZ-f86aJVhD6LUVgVRpoAn_9ewhMxiGDra0ygd3gGy70ZmlQrP7DYsOh_Pok3AM3OGbcEZzWO2OFfI807ggKGJKYCE4G0enIAFLD00xb1MRgyGy02zMnWNnwI1HmUPWBusRb5Royotmy-CCxI3GRvK1z_fGToD-LHGebCszt51qqiXrSmHWLF1jin69wKvIZ7HgvAlLMLZMSdjCF4DOVZPfJJSecGpn5h9WCudf7W_FqrLkAjbnIr5iNTFd70aRyV04ZVpnvoNmwigvacDsLSPwdMvtqId5JdyKhouC9CDEOP-xZTr55qgbZBWKtisZ9n2bbhg4T4gDsSIj9v-y1STuhsv8qg64RJXSKD5dgKgb1aGzyzvdn1srXXgLkg4bUFKXusRvvOhLmVKSGE_xhxTa9q4wxXBjIWGvmz-52zF04gJ2kgN67OnZUvPIjz_KvUFJllZygfW2DBxzh0ZWeooo_KbjK5W54A1PJuu4GgFc9FztVOa17eJCJF_ieNexxhc95JfWvsPXTEjQmhnafbDOeTNCu9lvBHMq4HKtrBj8tlLBacXV8LvHUeFneE7wMX3Nvoru_5ftgLweArWYo9bBPqe--iD9NgHy7wGvuaqRzA1hUi5OJKr2TVJiRJK23Pk-iDn2g-rFh9hvE2kxHJSWsstVD_F_N_3iWpELwxM8JhqWfq6o5tgMPyxsqezdZV-XqVWWwmJ0UtXGBrGGp2H3SGVXTOlQgSTSy4RuNoRH9ESCZ68vaRZdSnHlaAmqNmVihZdFYjC6JA86l615amFsmpD1rKlwkDmMGmLNG0_S0S_YI3fLKXu9OqhwJ9krs21cm43gMfn7BtsQTDtHstW_UoXa_9PSDIcg76Oovb_SGmQZ1MJHuFveivNHjuGF7SsUPS0oBigGrofr-dWsZe9eLQIl8k1M4SeTqWtoquynoIznBd';
+const DBX_TOKEN = 'sl.u.AGj7jMrtaaOy6eCL0GYn4q4uZS_AB51m45rR9vVJ64zhWpGVvq8sDBSsZU7eBmJi22ntriRG0J5pZYhdQLZ3w-SW9cqB1YdWXR36DIt79ilHUWkT5tIUl09iUDmgBUgfQ6po400XPdI9z4du4d75_xKe4tga4NmsbvsdTSCjwLm6ZoZICuAOnJ9DhKtRZNNzATTfbojPmWCCGT-v7Y86SbAhPRkkv9dOm0bt1tSQbgf5zceCHVxd4kBlY-PcL_2Z_Z2eIbqk74am_X0OBxLQ5oupWgPoWoWqs1nt3NeG-b4NPJ1cRlqjgAgR77VGDXdNFjoPivhfbba8I82plQ4OwTxdOCgoIt05eYHBP5168IDThE4YCZFV_ahXNrc74rWulcW7kQsNWaT_mhz9cQz2m1mIF0we46fnRMG9GmFwsGE4XLCCnCs-GKr-sBGKZTKa181ifTDwIoHXj-WxieRaDyCG6ngy-VHk_M9VkzPi-MYjMk4vYPXdkS9OfD1f5YKccs8Kb-aypleVK1nEJBuz_aVcDJOGUNuidEapeFwloD2eJCsNk8rYlWfl2ACAEEmK7jk4l0kQIFtY4WmpptsTX2cqw3imik1hbSBkbN_zqJ4ptwX9ouSGkVMBgTKze0ZWAw6FLbxk3joFHAY8YXRzviuJfFeZ3emApuah1gOlLZw_lz34gDCjHk7aXuA_zFcrM_DHGWUBOZLE2Yndm7w6sENy4_Ph2XEJ2nfVfDiJomQJZfdfUnQ6f8hmaazweQn745Uf48LSU3J9Do3TxLLtTCMivP9fSIMTv6RQs5ZdrRwXylwJnxzmwkFoicZmL_7f_dL6D1BfEjZpBb0A5yNk9wXnK-pIS1vQ6lJxLhChyL6HSofUmlMOOzc4xmRZMYgwa8R2gj9MF3LUUP7IkE4ttVz93qR8UT8nGeyOTfe2Ao4zVlPkzsNZuQg5koqcHiqLCBc6hbCjWS-soqXupofuVbgNT3imLQOqeXLI2G_S5BlA6DZEYMKmPhEOy_Q7REBEYyKJ6UbOHuhI2eSNk2qMLDAQAcY8KZjOuRbJaSEVwU8Y-sXmNcb6YzJUAqzoHGJzY2aZgFvPXADAghVsvN7UHUds_sPSI7Pu2c1Bd9WiW4KeI0A-9T7MF07xdMnA580XRh8QvmhUr2Eh4pPOQ77Ha2O4YHeSQmfkz4d5pNY3Wj0A_3b579shGSmBnTBMKchyHkM0RRdY4fPYsOOdShQdG_yMyfth7aT9ho3E4tWdY-KFtk8LL9XAEEh6alFcgWdDWUeGWaV0O367ht9xO95AvoWGEpGnDWUUCNB5_oavBJkBAIQ0r_cclKy2nq84QFt9DvHmqXZMnYwEL2GcC7DL8K1-';
 const DBX_PATH = '/NeuroAgenda_backup.json';
 let dbxSaveTimer = null, dbxSaving = false;
 
