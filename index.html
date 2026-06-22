@@ -1317,6 +1317,8 @@ function importarTodo(){
 // ═══════════════════════════════════════════════════════════
 //  DROPBOX AUTO-SYNC (OAuth2 + PKCE, con renovación automática)
 // ═══════════════════════════════════════════════════════════
+//  DROPBOX AUTO-SYNC (OAuth2 Implicit Flow)
+// ═══════════════════════════════════════════════════════════
 const DBX_APP_KEY = '9iy6bt4bd3nyzzy';
 const DBX_REDIRECT_URI = 'https://dradalmaschio.github.io/neuroagenda/';
 const DBX_PATH = '/NeuroAgenda_backup.json';
@@ -1330,100 +1332,58 @@ function dbxSetStatus(state, msg){
   status.textContent = msg;
 }
 
-// ── PKCE helpers ──
-function dbxRandStr(len){
-  const arr = new Uint8Array(len);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, function(b){return ('0'+b.toString(16)).slice(-2);}).join('').slice(0,len);
+function dbxIsConnected(){
+  const token = localStorage.getItem('dbx_access_token');
+  const exp = +(localStorage.getItem('dbx_access_token_exp')||0);
+  return !!token && Date.now() < exp;
 }
-function dbxB64Url(buf){
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-async function dbxChallenge(verifier){
-  const enc = new TextEncoder().encode(verifier);
-  const digest = await crypto.subtle.digest('SHA-256', enc);
-  return dbxB64Url(digest);
-}
-
-function dbxIsConnected(){ return !!localStorage.getItem('dbx_refresh_token'); }
 
 function updateDbxConnectBtn(){
   const btn = document.getElementById('dbx-connect-btn');
   if(!btn) return;
-  btn.style.display = dbxIsConnected() ? 'none' : 'inline-block';
+  if(dbxIsConnected()){
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = 'inline-block';
+    btn.textContent = localStorage.getItem('dbx_access_token') ? '🔄 Reconectar Dropbox' : 'Conectar Dropbox';
+  }
 }
 
-// ── Connect flow (one-time, redirige a Dropbox y vuelve) ──
-async function dbxConnect(){
-  const verifier = dbxRandStr(64);
-  localStorage.setItem('dbx_pkce_verifier', verifier);
-  const challenge = await dbxChallenge(verifier);
+function dbxConnect(){
+  const state = Math.random().toString(36).slice(2);
+  localStorage.setItem('dbx_oauth_state', state);
   const params = new URLSearchParams({
     client_id: DBX_APP_KEY,
-    response_type: 'code',
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    token_access_type: 'offline',
-    redirect_uri: DBX_REDIRECT_URI
+    response_type: 'token',
+    redirect_uri: DBX_REDIRECT_URI,
+    state: state
   });
   window.location.href = 'https://www.dropbox.com/oauth2/authorize?' + params.toString();
 }
 
-// Procesa el ?code=... que Dropbox agrega al volver
-async function dbxHandleRedirect(){
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if(!code) return;
-  const verifier = localStorage.getItem('dbx_pkce_verifier');
+function dbxHandleRedirect(){
+  const hash = window.location.hash;
+  if(!hash || !hash.includes('access_token')) return;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get('access_token');
+  const expiresIn = +(params.get('expires_in') || 14400);
   window.history.replaceState({}, '', window.location.pathname);
-  if(!verifier){ dbxSetStatus('err','Falta el verificador PKCE, reintentá conectar.'); return; }
-  dbxSetStatus('saving','Conectando con Dropbox...');
-  try{
-    const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        code: code, grant_type: 'authorization_code', client_id: DBX_APP_KEY,
-        code_verifier: verifier, redirect_uri: DBX_REDIRECT_URI
-      })
-    });
-    const data = await res.json();
-    if(!res.ok || !data.refresh_token){
-      console.error('Dropbox auth error:', data);
-      dbxSetStatus('err','Error al conectar con Dropbox ('+(data.error_description||data.error||'desconocido')+')');
-      return;
-    }
-    localStorage.setItem('dbx_refresh_token', data.refresh_token);
-    localStorage.setItem('dbx_access_token', data.access_token);
-    localStorage.setItem('dbx_access_token_exp', String(Date.now() + (data.expires_in*1000) - 60000));
-    localStorage.removeItem('dbx_pkce_verifier');
-    dbxSetStatus('ok','Dropbox: conectado ✓');
-    toast('Dropbox conectado ✓');
-    updateDbxConnectBtn();
-  }catch(e){
-    dbxSetStatus('err','Sin conexión al conectar con Dropbox');
-  }
+  if(!token){ dbxSetStatus('err','No se recibio el token de Dropbox'); return; }
+  localStorage.removeItem('dbx_oauth_state');
+  localStorage.setItem('dbx_access_token', token);
+  localStorage.setItem('dbx_access_token_exp', String(Date.now() + (expiresIn * 1000) - 600000));
+  dbxSetStatus('ok','Dropbox: conectado ✓');
+  toast('Dropbox conectado ✓');
+  updateDbxConnectBtn();
 }
 
-// Devuelve un access token válido, renovándolo solo si hizo falta. null si no está conectado.
 async function getDbxAccessToken(){
-  const refresh = localStorage.getItem('dbx_refresh_token');
-  if(!refresh) return null;
+  const token = localStorage.getItem('dbx_access_token');
   const exp = +(localStorage.getItem('dbx_access_token_exp')||0);
-  const cached = localStorage.getItem('dbx_access_token');
-  if(cached && Date.now() < exp) return cached;
-  try{
-    const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refresh, client_id: DBX_APP_KEY })
-    });
-    const data = await res.json();
-    if(!res.ok || !data.access_token){ console.error('Dropbox refresh error:', data); return null; }
-    localStorage.setItem('dbx_access_token', data.access_token);
-    localStorage.setItem('dbx_access_token_exp', String(Date.now() + (data.expires_in*1000) - 60000));
-    return data.access_token;
-  }catch(e){ return null; }
+  if(token && Date.now() < exp) return token;
+  dbxSetStatus('err','Dropbox: sesion vencida — toca Reconectar');
+  updateDbxConnectBtn();
+  return null;
 }
 
 function buildBackupPayload(){
@@ -1522,7 +1482,7 @@ async function dbxRestoreIfNeeded(){
 
 // Init on load
 window.addEventListener('load', function(){
-  dbxHandleRedirect().then(dbxRestoreIfNeeded);
+  dbxHandleRedirect(); dbxRestoreIfNeeded();
 });
 
 </script>
