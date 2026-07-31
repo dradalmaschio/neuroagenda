@@ -184,7 +184,14 @@ select option{background:var(--bg)}
 .nota-block{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px;margin-bottom:6px}
 .nota-fecha{font-size:11px;font-weight:600;color:var(--ac);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
 .nota-txt{font-size:13px;color:var(--mt);line-height:1.55;white-space:pre-wrap;word-break:break-word}
-.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.fin-mes-sec{border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:10px;overflow:hidden}
+.fin-mes-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:var(--sf);user-select:none}
+.fin-mes-hdr:active{background:var(--sf2)}
+.fin-mes-body{padding:0 12px 12px}
+.fin-mes-arr{font-size:12px;color:var(--mt)}
+.fin-click{cursor:pointer;transition:opacity .15s}
+.fin-click:active{opacity:.7}
+.fin-det-panel{background:var(--sf);border-radius:var(--rs);padding:0 4px}
 .img-thumb{aspect-ratio:1;border-radius:var(--rs);overflow:hidden;background:var(--sf2);cursor:pointer;position:relative;border:1px solid var(--bd)}
 .img-thumb img{width:100%;height:100%;object-fit:cover}
 .img-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);border:none;color:#fff;border-radius:4px;font-size:10px;padding:2px 5px;cursor:pointer}
@@ -298,7 +305,10 @@ select option{background:var(--bg)}
     <button class="back" style="margin-bottom:0" onclick="sv('pacs')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Volver
     </button>
-    <button class="btns" onclick="openEditPat(currentPatId)">&#9998; Editar paciente</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btns" onclick="openEditPat(currentPatId)">✎ Editar paciente</button>
+      <button onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)44;color:var(--rd);font-size:11px;padding:5px 10px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar</button>
+    </div>
   </div>
   <div id="det"></div>
 </div>
@@ -317,6 +327,9 @@ select option{background:var(--bg)}
 </div>
 
 <div id="view-fin" class="view">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+    <button onclick="document.getElementById('fin-chpass-ov').style.display='flex'" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer;padding:4px 0">🔐 Cambiar contraseña</button>
+  </div>
   <div class="ftabs">
     <button class="ftab on" onclick="ftab('reg')">Ingresos</button>
     <button class="ftab" onclick="ftab('gastos')">Gastos</button>
@@ -522,7 +535,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function esc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 
 function allPats(){
-  const base=PTS_BASE.map(p=>{const e=patEdits[p.id]||{};return{...p,...e,dx_propio:dxPropio[p.id]||'',dx_ia:dxIA[p.id]||p.diagnostico||''};});
+  const base=PTS_BASE.map(p=>{const e=patEdits[p.id]||{};return{...p,...e,dx_propio:dxPropio[p.id]||'',dx_ia:dxIA[p.id]||p.diagnostico||''};}).filter(p=>!p._deleted);
   const extra=extraPats.map(p=>({...p,dx_propio:dxPropio[p.id]||p.dx_propio||'',dx_ia:dxIA[p.id]||p.diagnostico||''}));
   return [...base,...extra];
 }
@@ -530,6 +543,16 @@ function getPat(id){return allPats().find(p=>p.id===id);}
 function showDx(p){return p.dx_propio||p.dx_ia||p.diagnostico||'sin_diagnostico';}
 
 function sv(v){
+  if(v==='fin'&&!window._finAuth){
+    window._finPendingNav=true;
+    const ov=document.getElementById('fin-lock-ov');
+    const inp=document.getElementById('fin-lock-inp');
+    ov.style.display='flex';
+    inp.value='';
+    document.getElementById('fin-lock-err').textContent='';
+    setTimeout(()=>inp.focus(),80);
+    return;
+  }
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));
   document.getElementById('view-'+v)?.classList.add('on');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -537,6 +560,41 @@ function sv(v){
   const idx=vm[v];if(idx!==undefined)document.querySelectorAll('.tab')[idx]?.classList.add('on');
   if(v==='detail')document.querySelectorAll('.tab')[1]?.classList.add('on');
   window.scrollTo(0,0);if(v==='fin')renderFin();if(v==='pacs')rpts();
+}
+
+function finUnlock(){
+  const inp=document.getElementById('fin-lock-inp');
+  const pass=inp.value;
+  const correctPass=localStorage.getItem('na_fin_pass')||'neuro44';
+  if(pass===correctPass){
+    window._finAuth=true;
+    document.getElementById('fin-lock-ov').style.display='none';
+    sv('fin');
+  } else {
+    document.getElementById('fin-lock-err').textContent='Contraseña incorrecta';
+    inp.value='';inp.focus();
+  }
+}
+
+function finLockCancel(){
+  document.getElementById('fin-lock-ov').style.display='none';
+  window._finPendingNav=false;
+  sv('home');
+}
+
+function finSavePass(){
+  const old=document.getElementById('fin-cp-old').value;
+  const nw=document.getElementById('fin-cp-new').value;
+  const conf=document.getElementById('fin-cp-conf').value;
+  const correctPass=localStorage.getItem('na_fin_pass')||'neuro44';
+  const err=document.getElementById('fin-cp-err');
+  if(old!==correctPass){err.textContent='La contraseña actual es incorrecta';return;}
+  if(!nw||nw.length<4){err.textContent='La nueva contraseña debe tener al menos 4 caracteres';return;}
+  if(nw!==conf){err.textContent='Las contraseñas nuevas no coinciden';return;}
+  localStorage.setItem('na_fin_pass',nw);
+  document.getElementById('fin-chpass-ov').style.display='none';
+  ['fin-cp-old','fin-cp-new','fin-cp-conf'].forEach(id=>document.getElementById(id).value='');
+  toast('✓ Contraseña actualizada');
 }
 function clsOv(id,e){if(e&&e.target===document.getElementById(id))document.getElementById(id).classList.add('h');}
 
@@ -950,8 +1008,8 @@ function rpts(){
   }).join('');
 }
 
-function clsImgOv(){document.getElementById('img-ov').style.display='none';}
-function openImg(src){const ov=document.getElementById('img-ov');document.getElementById('img-ov-src').src=src;ov.style.display='flex';}
+function clsImgOv(){document.getElementById("img-ov").style.display="none";if(window._imgOvReset)window._imgOvReset();}
+function openImg(src){const ov=document.getElementById("img-ov");const im=document.getElementById("img-ov-src");im.src=src;const dl=document.getElementById("img-ov-dl");if(dl){dl.href=src;}ov.style.display="flex";if(window._imgOvReset)window._imgOvReset();}
 
 function getPacImgs(id){
   try{const v=localStorage.getItem('na5_imgs_'+id);return v?JSON.parse(v):[];}catch(e){return[];}
@@ -1003,8 +1061,8 @@ function renderImgs(pacId){
   return wrap;
 }
 
-function clsImgOv(){document.getElementById('img-ov').style.display='none';}
-function openImg(src){const ov=document.getElementById('img-ov');document.getElementById('img-ov-src').src=src;ov.style.display='flex';}
+function clsImgOv(){document.getElementById("img-ov").style.display="none";if(window._imgOvReset)window._imgOvReset();}
+function openImg(src){const ov=document.getElementById("img-ov");const im=document.getElementById("img-ov-src");im.src=src;const dl=document.getElementById("img-ov-dl");if(dl){dl.href=src;}ov.style.display="flex";if(window._imgOvReset)window._imgOvReset();}
 
 function getPacImgs(id){
   try{const v=localStorage.getItem('na5_imgs_'+id);return v?JSON.parse(v):[];}catch(e){return[];}
@@ -1106,6 +1164,27 @@ function delNota(pacId, notaIdx, isBase){
     if(notas2[pacId]){notas2[pacId].splice(notaIdx,1);S('n2',notas2);}
   }
   showPt(pacId);toast('Consulta eliminada');
+}
+
+function delPat(id){
+  const p=getPat(id);if(!p)return;
+  if(!confirm('¿Eliminar a '+p.nombre+'? Esta acción no se puede deshacer.'))return;
+  if(id.startsWith('new_')){
+    // Paciente agregado por el usuario: quitar de extraPats
+    extraPats=extraPats.filter(e=>e.id!==id);S('ep',extraPats);
+  } else {
+    // Paciente base: marcar como eliminado en patEdits
+    if(!patEdits[id])patEdits[id]={};
+    patEdits[id]._deleted=true;
+    S('pe',patEdits);
+  }
+  // Limpiar datos asociados
+  delete dxPropio[id];S('dxp',dxPropio);
+  delete dxIA[id];S('dxi',dxIA);
+  delete notas2[id];S('n2',notas2);
+  delete resumenesIA[id];S('ri',resumenesIA);
+  toast('Paciente eliminado');
+  sv('pacs');buildList();
 }
 
 function showPt(id){
@@ -1461,8 +1540,9 @@ function regCobro(){
   } else {
     if(!t.total&&!senia&&!pago){alert('Ingresá al menos un monto');return;}
     total=t.total||(senia+pago);
+    total=Math.max(total, senia+pago); // si cobró más que el preset, el total real es lo cobrado
   }
-  const cobrado=senia+pago,saldo=total-cobrado;
+  const cobrado=senia+pago,saldo=Math.max(0,total-cobrado);
   const notaFinal=servDesc?(servDesc+(nota?' · '+nota:'')):(nota||'');
   cobros.unshift({id:Date.now(),fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal});
   S('co',cobros);
@@ -1499,24 +1579,67 @@ function renderHist(){
 }
 function delCobro(id){if(!confirm('\u00bfEliminar?'))return;cobros=cobros.filter(c=>c.id!==id);S('co',cobros);renderHist();}
 function renderResumen(){
-  const hoy=new Date(),ma=hoy.getMonth(),aa=hoy.getFullYear();
-  function delMes(arr){return arr.filter(c=>{const p=(c.fecha||'').split('/');if(p.length<3)return false;const d=new Date(+p[2],+p[1]-1,+p[0]);return d.getMonth()===ma&&d.getFullYear()===aa;});}
-  const ingTotal=cobros.reduce((a,c)=>a+c.senia+c.pago,0),ingMes=delMes(cobros).reduce((a,c)=>a+c.senia+c.pago,0);
-  const gastTotal=gastos.reduce((a,g)=>a+g.monto,0),gastMes=delMes(gastos).reduce((a,g)=>a+g.monto,0);
-  const pend=cobros.reduce((a,c)=>a+c.saldo,0),netMes=ingMes-gastMes;
-  const porT={};cobros.forEach(c=>{if(!porT[c.tipoLabel])porT[c.tipoLabel]={n:0,t:0};porT[c.tipoLabel].n++;porT[c.tipoLabel].t+=c.senia+c.pago;});
-  const porG={};gastos.forEach(g=>{if(!porG[g.categoria])porG[g.categoria]=0;porG[g.categoria]+=g.monto;});
-  document.getElementById('fin-res').innerHTML=
-    '<div class="sec-ttl">Este mes</div><div class="fgrid">'+
-      '<div class="fcard"><div class="fn2" style="color:var(--gn)">$'+ingMes.toLocaleString('es-AR')+'</div><div class="fl2">Ingresos</div></div>'+
-      '<div class="fcard"><div class="fn2" style="color:var(--rd)">$'+gastMes.toLocaleString('es-AR')+'</div><div class="fl2">Gastos</div></div>'+
-      '<div class="fcard"><div class="fn2" style="color:'+(netMes>=0?'var(--gn)':'var(--rd)')+'">$'+Math.abs(netMes).toLocaleString('es-AR')+'</div><div class="fl2">'+(netMes>=0?'Balance +':'Balance -')+'</div></div>'+
-    '</div><div class="sec-ttl">Acumulado</div><div class="fgrid">'+
-      '<div class="fcard"><div class="fn2" style="color:var(--ac)">$'+ingTotal.toLocaleString('es-AR')+'</div><div class="fl2">Total ingresos</div></div>'+
-      '<div class="fcard"><div class="fn2" style="color:var(--am)">$'+pend.toLocaleString('es-AR')+'</div><div class="fl2">Pendiente cobro</div></div>'+
-      '<div class="fcard"><div class="fn2" style="color:var(--rd)">$'+gastTotal.toLocaleString('es-AR')+'</div><div class="fl2">Total gastos</div></div>'+
-    '</div><div class="sec-ttl">Por tipo de consulta</div>'+Object.entries(porT).map(([k,v])=>'<div style="display:flex;justify-content:space-between;padding:9px 11px;background:var(--sf);border-radius:var(--rs);margin-bottom:5px"><div><div style="font-size:13px;font-weight:500">'+k+'</div><div style="font-size:11px;color:var(--mt)">'+v.n+' cobro'+(v.n!==1?'s':'')+'</div></div><div style="font-size:14px;font-weight:700;color:var(--gn)">$'+v.t.toLocaleString('es-AR')+'</div></div>').join('')+
-    '<div class="sec-ttl">Gastos por categor\u00eda</div>'+Object.entries(porG).map(([k,v])=>'<div style="display:flex;justify-content:space-between;padding:9px 11px;background:var(--sf);border-radius:var(--rs);margin-bottom:5px"><div style="font-size:13px;font-weight:500">'+k+'</div><div style="font-size:14px;font-weight:700;color:var(--rd)">$'+v.toLocaleString('es-AR')+'</div></div>').join('');
+  function parseDate(str){const p=(str||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
+  function monthKey(d){return d?d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0')):null;}
+  function monthLabel(key){const[y,m]=key.split('-');const nm=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];return nm[+m-1]+' '+y;}
+  const hoy=new Date(),curKey=monthKey(hoy);
+  const ingByM={},gastByM={};
+  cobros.forEach(c=>{const k=monthKey(parseDate(c.fecha));if(k){if(!ingByM[k])ingByM[k]=[];ingByM[k].push(c);}});
+  gastos.forEach(g=>{const k=monthKey(parseDate(g.fecha));if(k){if(!gastByM[k])gastByM[k]=[];gastByM[k].push(g);}});
+  const allKeys=[...new Set([...Object.keys(ingByM),...Object.keys(gastByM)])].sort((a,b)=>b.localeCompare(a));
+  const ingTotal=cobros.reduce((a,c)=>a+c.senia+c.pago,0);
+  const gastTotal=gastos.reduce((a,g)=>a+g.monto,0);
+  const pend=cobros.reduce((a,c)=>a+c.saldo,0);
+  const netTotal=ingTotal-gastTotal;
+  let html='';
+  html+='<div class="sec-ttl" style="margin-top:4px">Acumulado total</div><div class="fgrid" style="margin-bottom:16px">';
+  html+='<div class="fcard fin-click" onclick="finShowDet(\'ing-all\')"><div class="fn2" style="color:var(--gn)">$'+ingTotal.toLocaleString('es-AR')+'</div><div class="fl2">Ingresos ›</div></div>';
+  html+='<div class="fcard fin-click" onclick="finShowDet(\'pend-all\')"><div class="fn2" style="color:var(--am)">$'+pend.toLocaleString('es-AR')+'</div><div class="fl2">Pendiente ›</div></div>';
+  html+='<div class="fcard fin-click" onclick="finShowDet(\'gast-all\')"><div class="fn2" style="color:var(--rd)">$'+gastTotal.toLocaleString('es-AR')+'</div><div class="fl2">Gastos ›</div></div>';
+  html+='<div class="fcard"><div class="fn2" style="color:'+(netTotal>=0?'var(--gn)':'var(--rd)')+'">$'+Math.abs(netTotal).toLocaleString('es-AR')+'</div><div class="fl2">'+(netTotal>=0?'Balance +':'Balance -')+'</div></div></div>';
+  html+='<div id="fin-det-all" class="fin-det-panel"></div>';
+  allKeys.forEach(k=>{
+    const cs=ingByM[k]||[],gs=gastByM[k]||[];
+    const ing=cs.reduce((a,c)=>a+c.senia+c.pago,0),gast=gs.reduce((a,g)=>a+g.monto,0),pd=cs.reduce((a,c)=>a+c.saldo,0),net=ing-gast,esCurr=k===curKey;
+    html+='<div class="fin-mes-sec" id="fms-'+k+'">';
+    html+='<div class="fin-mes-hdr" onclick="finToggleMes(\''+k+'\')"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:600">'+monthLabel(k)+'</span>'+(esCurr?'<span style="font-size:10px;background:var(--ac);color:#fff;border-radius:8px;padding:1px 7px">Este mes</span>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;color:'+(net>=0?'var(--gn)':'var(--rd)')+'">'+(net>=0?'+':'-')+'$'+Math.abs(net).toLocaleString('es-AR')+'</span><span class="fin-mes-arr" id="farr-'+k+'">'+(esCurr?'▲':'▼')+'</span></div></div>';
+    html+='<div class="fin-mes-body" id="fmb-'+k+'" style="display:'+(esCurr?'block':'none')+'"><div class="fgrid" style="margin:10px 0 6px">';
+    html+='<div class="fcard fin-click" onclick="finShowDet(\'ing-'+k+'\')"><div class="fn2" style="color:var(--gn)">$'+ing.toLocaleString('es-AR')+'</div><div class="fl2">Ingresos ›</div></div>';
+    if(pd>0)html+='<div class="fcard fin-click" onclick="finShowDet(\'pend-'+k+'\')"><div class="fn2" style="color:var(--am)">$'+pd.toLocaleString('es-AR')+'</div><div class="fl2">Pendiente ›</div></div>';
+    html+='<div class="fcard fin-click" onclick="finShowDet(\'gast-'+k+'\')"><div class="fn2" style="color:var(--rd)">$'+gast.toLocaleString('es-AR')+'</div><div class="fl2">Gastos ›</div></div>';
+    html+='</div><div id="fin-det-'+k+'" class="fin-det-panel"></div></div></div>';
+  });
+  if(!allKeys.length)html+='<div style="color:var(--mt2);text-align:center;padding:40px 0;font-size:14px">Sin movimientos registrados</div>';
+  document.getElementById('fin-res').innerHTML=html;
+}
+
+function finToggleMes(k){
+  const body=document.getElementById('fmb-'+k),arr=document.getElementById('farr-'+k);
+  if(!body)return;const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';if(arr)arr.textContent=open?'▼':'▲';
+}
+
+function finShowDet(key){
+  const m=key.match(/^(ing|gast|pend)-(.+)$/);if(!m)return;
+  const tipo=m[1],monthK=m[2];
+  const panelId='fin-det-'+monthK,panel=document.getElementById(panelId);if(!panel)return;
+  if(panel.dataset.tipo===tipo&&panel.innerHTML){panel.innerHTML='';panel.dataset.tipo='';return;}
+  panel.dataset.tipo=tipo;
+  function parseDate(str){const p=(str||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
+  function monthKey(d){return d?d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0')):null;}
+  let html='';
+  if(tipo!=='gast'){
+    const fil=cobros.filter(c=>{const mk=monthKey(parseDate(c.fecha));return (monthK==='all'||mk===monthK)&&(tipo==='pend'?c.saldo>0:true);});
+    if(!fil.length){panel.innerHTML='<div style="color:var(--mt2);font-size:13px;padding:8px 0">Sin registros</div>';return;}
+    html=fil.map(c=>{const cobrado=c.senia+c.pago,idx=cobros.indexOf(c);
+      return '<div class="pay-item" style="flex-direction:column;align-items:stretch"><div style="display:flex;gap:10px;align-items:flex-start"><div class="pay-info"><div class="pay-name">'+c.pacienteNombre+'</div><div class="pay-meta">'+c.fecha+' · '+c.tipoLabel+(c.nota?' · '+c.nota:'')+'</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap">'+(c.senia?'<span class="tag-s">Seña $'+c.senia.toLocaleString('es-AR')+'</span>':'')+(c.pago?'<span class="tag-p">Consultorio $'+c.pago.toLocaleString('es-AR')+'</span>':'')+'</div>'+(c.saldo>0?'<button class="inline-save" style="margin-top:6px;font-size:11px;padding:3px 10px" onclick="completarPago('+idx+')">Completar pago ($'+c.saldo.toLocaleString('es-AR')+')</button>':'')+'</div><div class="pay-amt"><div class="pay-total">$'+cobrado.toLocaleString('es-AR')+'</div><div class="pay-saldo" style="color:'+(c.saldo>0?'var(--am)':'var(--gn)')+'">'+( c.saldo>0?'Resta $'+c.saldo.toLocaleString('es-AR'):'Pagado ✓')+'</div></div></div><div style="text-align:right;margin-top:8px;padding-top:6px;border-top:1px dashed var(--bd)"><button style="background:none;border:1px solid var(--rd)33;color:var(--rd);font-size:10px;padding:2px 8px;border-radius:5px;cursor:pointer" onclick="delCobro('+c.id+');renderResumen()">🗑 Eliminar cobro</button></div></div>';
+    }).join('');
+  } else {
+    const fil=gastos.filter(g=>{const mk=monthKey(parseDate(g.fecha));return monthK==='all'||mk===monthK;});
+    if(!fil.length){panel.innerHTML='<div style="color:var(--mt2);font-size:13px;padding:8px 0">Sin gastos</div>';return;}
+    html=fil.map(g=>'<div class="pay-item"><div class="pay-info"><div class="pay-name">'+g.concepto+'</div><div class="pay-meta">'+g.fecha+' · <span class="tag-g">'+g.categoria+'</span></div></div><div class="pay-amt"><div class="pay-total" style="color:var(--rd)">-$'+g.monto.toLocaleString('es-AR')+'</div></div><button class="pay-del" onclick="delGasto('+g.id+');renderResumen()">🗑</button></div>').join('');
+  }
+  panel.innerHTML='<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">'+html+'</div>';
 }
 
 function buildStats(){
@@ -1851,6 +1974,71 @@ window.addEventListener('load', function(){
 
 </script>
 
-<div id="img-ov" style="display:none" class="img-overlay" onclick="clsImgOv()"><button class="img-overlay-close" onclick="clsImgOv()">&#10005;</button><img id="img-ov-src" src="" alt=""></div>
+<div id="fin-lock-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center">
+  <div style="background:var(--bg);border-radius:16px;padding:28px 24px;width:min(88vw,320px);text-align:center">
+    <div style="font-size:32px;margin-bottom:8px">🔒</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">Finanzas</div>
+    <div style="font-size:13px;color:var(--mt);margin-bottom:20px">Ingresá la contraseña para acceder</div>
+    <input type="password" id="fin-lock-inp" placeholder="Contraseña" autocomplete="off"
+      style="width:100%;padding:11px 14px;border:1.5px solid var(--bd);border-radius:var(--rs);font-size:15px;background:var(--sf);color:var(--tx);box-sizing:border-box;margin-bottom:8px;text-align:center;letter-spacing:3px"
+      onkeydown="if(event.key==='Enter')finUnlock()">
+    <div id="fin-lock-err" style="color:var(--rd);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <button class="btnp" onclick="finUnlock()">Ingresar</button>
+    <button class="back" style="margin-top:10px;width:100%;justify-content:center" onclick="finLockCancel()">Cancelar</button>
+  </div>
+</div>
+<div id="fin-chpass-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center">
+  <div style="background:var(--bg);border-radius:16px;padding:28px 24px;width:min(88vw,320px)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px">Cambiar contraseña</div>
+    <label style="font-size:12px;color:var(--mt);display:block;margin-bottom:4px">Contraseña actual</label>
+    <input type="password" id="fin-cp-old" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-size:14px;background:var(--sf);color:var(--tx);box-sizing:border-box;margin-bottom:12px">
+    <label style="font-size:12px;color:var(--mt);display:block;margin-bottom:4px">Nueva contraseña</label>
+    <input type="password" id="fin-cp-new" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-size:14px;background:var(--sf);color:var(--tx);box-sizing:border-box;margin-bottom:12px">
+    <label style="font-size:12px;color:var(--mt);display:block;margin-bottom:4px">Confirmar nueva contraseña</label>
+    <input type="password" id="fin-cp-conf" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-size:14px;background:var(--sf);color:var(--tx);box-sizing:border-box;margin-bottom:8px">
+    <div id="fin-cp-err" style="color:var(--rd);font-size:12px;min-height:18px;margin-bottom:10px"></div>
+    <button class="btnp" onclick="finSavePass()">Guardar contraseña</button>
+    <button class="back" style="margin-top:10px;width:100%;justify-content:center" onclick="document.getElementById('fin-chpass-ov').style.display='none'">Cancelar</button>
+  </div>
+</div>
+
+<div id="img-ov" style="display:none" class="img-overlay">
+  <button class="img-overlay-close" onclick="clsImgOv()">✕</button>
+  <a id="img-ov-dl" download="imagen.jpg" style="position:fixed;top:14px;right:56px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2001;text-decoration:none">⬇</a>
+  <div id="img-ov-wrap" style="overflow:hidden;display:flex;align-items:center;justify-content:center;width:100%;height:100%;touch-action:none">
+    <img id="img-ov-src" src="" alt="" style="transform-origin:center;transition:transform .15s;max-width:100%;max-height:90vh;border-radius:var(--rs);object-fit:contain;user-select:none">
+  </div>
+</div>
+<script>
+(function(){
+  let scale=1,lastDist=0,lastTap=0,startX=0,startY=0,tx=0,ty=0;
+  const ov=()=>document.getElementById('img-ov');
+  const im=()=>document.getElementById('img-ov-src');
+  const wrap=()=>document.getElementById('img-ov-wrap');
+  function apply(){im().style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;}
+  function reset(){scale=1;tx=0;ty=0;apply();}
+  document.addEventListener('click',e=>{if(e.target===ov()||e.target===wrap())clsImgOv();});
+  document.getElementById('img-ov-wrap').addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    } else if(e.touches.length===1){
+      const now=Date.now();
+      if(now-lastTap<300){scale===1?scale=2.5:reset();apply();e.preventDefault();}
+      lastTap=now;
+      startX=e.touches[0].clientX-tx;startY=e.touches[0].clientY-ty;
+    }
+  },{passive:false});
+  document.getElementById('img-ov-wrap').addEventListener('touchmove',e=>{
+    if(e.touches.length===2){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      scale=Math.min(6,Math.max(1,scale*(d/lastDist)));lastDist=d;apply();e.preventDefault();
+    } else if(e.touches.length===1&&scale>1){
+      tx=e.touches[0].clientX-startX;ty=e.touches[0].clientY-startY;apply();e.preventDefault();
+    }
+  },{passive:false});
+  document.getElementById('img-ov-wrap').addEventListener('touchend',e=>{if(scale<1){reset();}});
+  window._imgOvReset=reset;
+})();
+</script>
 </body>
 </html>
