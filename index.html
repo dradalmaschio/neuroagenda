@@ -460,9 +460,10 @@ select option{background:var(--bg)}
       <div><label>Tel&#233;fono</label><input type="text" id="pat-tel" placeholder="11-1234-5678"></div>
     </div>
     <label>Email</label><input type="text" id="pat-email" placeholder="correo@ejemplo.com">
-    <label>Tu diagn&#243;stico (criterio propio)</label>
-    <select id="pat-dx-propio"><option value="">-- Sin asignar --</option></select>
-    <label>Diagn&#243;stico inferido por IA</label>
+    <label>Tu diagnóstico (criterio propio)</label>
+    <select id="pat-dx-propio" onchange="toggleDxLibre(this.value)"><option value="">-- Sin asignar --</option></select>
+    <input type="text" id="pat-dx-libre" placeholder="Escribí el diagnóstico..." style="display:none;margin-top:6px" autocomplete="off">
+    <label>Diagnóstico inferido por IA</label>
     <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
     <label>Antecedentes</label>
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
@@ -818,7 +819,14 @@ function delT(dk2,hora){if(!confirm('Cancelar turno?'))return;if(turnos[dk2])del
 function buildDxOpts(sel){
   let o='<option value="">-- Sin asignar --</option>';
   Object.entries(DL).forEach(([k,v])=>{o+='<option value="'+k+'" '+(sel===k?'selected':'')+'>'+v+'</option>';});
+  o+='<option value="__libre__" '+(sel&&!DL[sel]&&sel!==''?'selected':'')+'>✏️ Otro (escribir)...</option>';
   return o;
+}
+function toggleDxLibre(val){
+  const libre=document.getElementById('pat-dx-libre');
+  if(!libre)return;
+  if(val==='__libre__'){libre.style.display='';libre.focus();}
+  else{libre.style.display='none';}
 }
 function openNewPat(){
   document.getElementById('pat-mod-ttl').textContent='Nuevo paciente';
@@ -843,6 +851,15 @@ function openEditPat(id){
   document.getElementById('pat-antec').value=p.antecedentes||'';
   document.getElementById('pat-meds').value=p.medicacion_actual||'';
   document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||'');
+  // Si el diagnóstico propio es texto libre (no está en DL), mostrar el campo
+  const libreEl=document.getElementById('pat-dx-libre');
+  if(libreEl){
+    if(p.dx_propio&&!DL[p.dx_propio]){
+      libreEl.style.display='';libreEl.value=p.dx_propio;
+    } else {
+      libreEl.style.display='none';libreEl.value='';
+    }
+  }
   document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||'');
   document.getElementById('ov-pat').classList.remove('h');
 }
@@ -850,7 +867,8 @@ function savePat(){
   const id=document.getElementById('pat-id').value;
   const nombre=document.getElementById('pat-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio');return;}
-  const dxP=document.getElementById('pat-dx-propio').value;
+  const dxPRaw=document.getElementById('pat-dx-propio').value;
+  const dxP=dxPRaw==='__libre__'?(document.getElementById('pat-dx-libre')?.value.trim()||''):dxPRaw;
   const dxI=document.getElementById('pat-dx-ia').value;
   const notaTxt=document.getElementById('pat-notas').value.trim();
   if(id){
