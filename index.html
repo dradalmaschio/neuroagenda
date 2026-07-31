@@ -362,6 +362,11 @@ select option{background:var(--bg)}
       <div><label>Pago en consultorio ($)</label><input type="number" id="fin-pago" placeholder="0" min="0" oninput="actualizarSaldo()"></div>
     </div>
     <div style="margin-bottom:8px"><label class="form-lbl">Nota</label><input type="text" id="fin-nota" placeholder="Control, certificado CUD..."></div>
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer;user-select:none">
+      <input type="checkbox" id="fin-primera" style="width:18px;height:18px;accent-color:var(--gn);cursor:pointer">
+      <span style="font-size:13px;font-weight:600;color:var(--gn)">⭐ Primera vez</span>
+      <span style="font-size:11px;color:var(--mt)">(aplica a cualquier modalidad)</span>
+    </label>
     <button class="btnp" onclick="regCobro()">Registrar ingreso</button>
   </div>
   <div class="fsec" id="fsec-gastos">
@@ -499,10 +504,12 @@ const DC={"demencia_alzheimer": "#7C3AED", "demencia_vascular": "#6D28D9", "deme
 const ATPL={"1": {"label": "Lunes", "turnos": [{"hora": "09:00", "tipo": "presencial"}, {"hora": "09:45", "tipo": "presencial"}, {"hora": "10:30", "tipo": "presencial"}, {"hora": "11:15", "tipo": "presencial"}, {"hora": "12:00", "tipo": "presencial"}, {"hora": "15:00", "tipo": "video"}]}, "2": {"label": "Martes", "turnos": [{"hora": "09:00", "tipo": "video"}, {"hora": "09:45", "tipo": "video"}, {"hora": "10:30", "tipo": "video"}, {"hora": "18:00", "tipo": "video"}]}, "4": {"label": "Jueves", "turnos": [{"hora": "09:00", "tipo": "video"}, {"hora": "09:45", "tipo": "video"}, {"hora": "10:30", "tipo": "video"}]}, "5": {"label": "Viernes", "turnos": [{"hora": "09:00", "tipo": "video"}, {"hora": "09:45", "tipo": "video"}, {"hora": "10:30", "tipo": "video"}, {"hora": "13:00", "tipo": "presencial"}, {"hora": "13:45", "tipo": "presencial"}, {"hora": "14:30", "tipo": "presencial"}, {"hora": "15:15", "tipo": "presencial"}]}};
 
 const TIPOS=[
-  {id:'consulta',label:'Consulta',total:120000,senia:60000,color:'#38BDF8'},
+  {id:'presencial',label:'Presencial',total:120000,senia:60000,color:'#38BDF8'},
+  {id:'video',label:'Videoconsulta',total:120000,senia:60000,color:'#818CF8'},
+  {id:'domicilio',label:'Domicilio',total:0,senia:0,color:'#F59E0B',custom:true},
+  {id:'receta',label:'Receta',total:60000,senia:60000,color:'#10B981'},
   {id:'certificado',label:'Planilla/Certificado',total:300000,senia:150000,color:'#A78BFA'},
-  {id:'receta',label:'Receta fuera consulta',total:60000,senia:60000,color:'#10B981'},
-  {id:'domicilio',label:'Visita a domicilio',total:0,senia:0,color:'#F59E0B',custom:true},
+  {id:'consulta',label:'Consulta',total:120000,senia:60000,color:'#94A3B8'}, // compatibilidad histórica
   {id:'otro',label:'Otros',total:0,senia:0,color:'#94A3B8',custom:true},
 ];
 const GASTOS_HAB=[
@@ -516,7 +523,7 @@ const L=(k,d)=>{try{const v=localStorage.getItem('na4_'+k);return v?JSON.parse(v
 let extraPats=L('ep',[]),patEdits=L('pe',{}),dxPropio=L('dxp',{}),dxIA=L('dxi',{});
 let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resumenesIA=L('ria',{});
 let nextApps=L('napp',{});
-let iaCtx=null,chatH=[],mid=0,wo=0,mslot=null,currentPatId=null,pf='todos',ps='',selTipo='consulta';
+let iaCtx=null,chatH=[],mid=0,wo=0,mslot=null,currentPatId=null,pf='todos',ps='',selTipo='presencial';
 
 const dc2=d=>DC[d]||'#6B7280';
 const dl2=d=>DL[d]||d;
@@ -1532,7 +1539,7 @@ function regCobro(){
   const pago=parseFloat(document.getElementById('fin-pago').value)||0;
   const nota=document.getElementById('fin-nota').value.trim();
   const fecha=document.getElementById('fin-fecha').value||new Date().toLocaleDateString('es-AR');
-  let total=t.total,servDesc='';
+  const primeraVez=document.getElementById('fin-primera')?.checked||false;
   if(t.custom){
     total=parseFloat(document.getElementById('fin-total-custom').value)||0;
     servDesc=document.getElementById('fin-servicio').value.trim();
@@ -1544,9 +1551,10 @@ function regCobro(){
   }
   const cobrado=senia+pago,saldo=Math.max(0,total-cobrado);
   const notaFinal=servDesc?(servDesc+(nota?' · '+nota:'')):(nota||'');
-  cobros.unshift({id:Date.now(),fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal});
+  cobros.unshift({id:Date.now(),fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal,primeraVez});
   S('co',cobros);
   ['fin-pac-id','fin-pac-s','fin-senia','fin-pago','fin-nota'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const fp=document.getElementById('fin-primera');if(fp)fp.checked=false;
   const cf=document.getElementById('custom-fields');if(cf)cf.style.display='none';
   const sp=document.getElementById('saldo-preview');if(sp)sp.textContent='';
   document.getElementById('fin-pac-sel').textContent='';
@@ -1626,20 +1634,96 @@ function finShowDet(key){
   if(panel.dataset.tipo===tipo&&panel.innerHTML){panel.innerHTML='';panel.dataset.tipo='';return;}
   panel.dataset.tipo=tipo;
   function parseDate(str){const p=(str||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
-  function monthKey(d){return d?d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0')):null;}
+  function mKey(d){return d?d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0')):null;}
+  const tipoColors={presencial:'#38BDF8',video:'#818CF8',primera:'#34D399',domicilio:'#F59E0B',receta:'#10B981',certificado:'#A78BFA',consulta:'#94A3B8',otro:'#94A3B8'};
+
   let html='';
+
   if(tipo!=='gast'){
-    const fil=cobros.filter(c=>{const mk=monthKey(parseDate(c.fecha));return (monthK==='all'||mk===monthK)&&(tipo==='pend'?c.saldo>0:true);});
+    const fil=cobros.filter(c=>{const mk=mKey(parseDate(c.fecha));return (monthK==='all'||mk===monthK)&&(tipo==='pend'?c.saldo>0:true);});
     if(!fil.length){panel.innerHTML='<div style="color:var(--mt2);font-size:13px;padding:8px 0">Sin registros</div>';return;}
-    html=fil.map(c=>{const cobrado=c.senia+c.pago,idx=cobros.indexOf(c);
-      return '<div class="pay-item" style="flex-direction:column;align-items:stretch"><div style="display:flex;gap:10px;align-items:flex-start"><div class="pay-info"><div class="pay-name">'+c.pacienteNombre+'</div><div class="pay-meta">'+c.fecha+' · '+c.tipoLabel+(c.nota?' · '+c.nota:'')+'</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap">'+(c.senia?'<span class="tag-s">Seña $'+c.senia.toLocaleString('es-AR')+'</span>':'')+(c.pago?'<span class="tag-p">Consultorio $'+c.pago.toLocaleString('es-AR')+'</span>':'')+'</div>'+(c.saldo>0?'<button class="inline-save" style="margin-top:6px;font-size:11px;padding:3px 10px" onclick="completarPago('+idx+')">Completar pago ($'+c.saldo.toLocaleString('es-AR')+')</button>':'')+'</div><div class="pay-amt"><div class="pay-total">$'+cobrado.toLocaleString('es-AR')+'</div><div class="pay-saldo" style="color:'+(c.saldo>0?'var(--am)':'var(--gn)')+'">'+( c.saldo>0?'Resta $'+c.saldo.toLocaleString('es-AR'):'Pagado ✓')+'</div></div></div><div style="text-align:right;margin-top:8px;padding-top:6px;border-top:1px dashed var(--bd)"><button style="background:none;border:1px solid var(--rd)33;color:var(--rd);font-size:10px;padding:2px 8px;border-radius:5px;cursor:pointer" onclick="delCobro('+c.id+');renderResumen()">🗑 Eliminar cobro</button></div></div>';
-    }).join('');
+
+    // ── Agrupamiento por modalidad ──
+    const grupos={};
+    fil.forEach(c=>{
+      const k=c.tipo||'otro';
+      if(!grupos[k])grupos[k]={label:c.tipoLabel,color:tipoColors[k]||'#94A3B8',items:[],total:0,n:0};
+      grupos[k].items.push(c);
+      grupos[k].total+=c.senia+c.pago;
+      grupos[k].n++;
+    });
+    const orden=['presencial','video','domicilio','receta','certificado','consulta','otro'];
+    const gOrdenados=orden.filter(k=>grupos[k]).concat(Object.keys(grupos).filter(k=>!orden.includes(k)));
+
+    // Primera vez (subconjunto transversal)
+    const pvItems=fil.filter(c=>c.primeraVez);
+    const pvTotal=pvItems.reduce((a,c)=>a+c.senia+c.pago,0);
+
+    // ── Resumen por modalidad ──
+    html+='<div style="font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Por modalidad</div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">';
+    gOrdenados.forEach(k=>{
+      const g=grupos[k];
+      html+='<div style="background:'+g.color+'18;border:1px solid '+g.color+'33;border-radius:var(--rs);padding:8px 10px">'+
+        '<div style="font-size:11px;font-weight:700;color:'+g.color+';margin-bottom:2px">'+g.label+'</div>'+
+        '<div style="font-size:13px;font-weight:700;color:var(--tx)">$'+g.total.toLocaleString('es-AR')+'</div>'+
+        '<div style="font-size:11px;color:var(--mt)">'+g.n+' '+(g.n===1?'cobro':'cobros')+'</div>'+
+        '</div>';
+    });
+    html+='</div>';
+
+    // ── Primera vez (transversal) ──
+    if(pvItems.length){
+      html+='<div style="background:#34D39918;border:1px solid #34D39944;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px">';
+      html+='<div style="font-size:11px;font-weight:700;color:#34D399;margin-bottom:4px">⭐ PRIMERA VEZ <span style="font-weight:400;color:var(--mt)">(subconjunto transversal — no suma al total)</span></div>';
+      html+='<div style="font-size:14px;font-weight:700;color:var(--tx)">$'+pvTotal.toLocaleString('es-AR')+'</div>';
+      html+='<div style="font-size:11px;color:var(--mt);margin-bottom:8px">'+pvItems.length+' '+(pvItems.length===1?'cobro':'cobros')+'</div>';
+      // mini lista de primeras veces
+      html+=pvItems.map(c=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-top:1px dashed #34D39933">'+
+        '<div><div style="font-size:12px;font-weight:500">'+c.pacienteNombre+'</div>'+
+        '<div style="font-size:11px;color:var(--mt)">'+c.fecha+' · '+c.tipoLabel+'</div></div>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--gn)">$'+(c.senia+c.pago).toLocaleString('es-AR')+'</div>'+
+        '</div>').join('');
+      html+='</div>';
+    }
+
+    // ── Lista individual por modalidad ──
+    gOrdenados.forEach(k=>{
+      const g=grupos[k];
+      html+='<div style="margin-bottom:10px">';
+      html+='<div style="font-size:11px;font-weight:700;color:'+g.color+';text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:1px solid '+g.color+'33;margin-bottom:6px">'+g.label+'</div>';
+      html+=g.items.map(c=>{
+        const cobrado=c.senia+c.pago,idx=cobros.indexOf(c);
+        return '<div class="pay-item" style="flex-direction:column;align-items:stretch">'+
+          '<div style="display:flex;gap:10px;align-items:flex-start">'+
+          '<div class="pay-info"><div class="pay-name">'+c.pacienteNombre+(c.primeraVez?' <span style="font-size:10px;color:#34D399">⭐ 1ª vez</span>':'')+'</div>'+
+          '<div class="pay-meta">'+c.fecha+(c.nota?' · '+c.nota:'')+'</div>'+
+          '<div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap">'+
+          (c.senia?'<span class="tag-s">Seña $'+c.senia.toLocaleString('es-AR')+'</span>':'')+
+          (c.pago?'<span class="tag-p">Consultorio $'+c.pago.toLocaleString('es-AR')+'</span>':'')+
+          '</div>'+(c.saldo>0?'<button class="inline-save" style="margin-top:6px;font-size:11px;padding:3px 10px" onclick="completarPago('+idx+');renderResumen()">Completar pago ($'+c.saldo.toLocaleString('es-AR')+')</button>':'')+
+          '</div><div class="pay-amt"><div class="pay-total">$'+cobrado.toLocaleString('es-AR')+'</div>'+
+          '<div class="pay-saldo" style="color:'+(c.saldo>0?'var(--am)':'var(--gn)')+'">'+
+          (c.saldo>0?'Resta $'+c.saldo.toLocaleString('es-AR'):'Pagado ✓')+'</div></div></div>'+
+          '<div style="text-align:right;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bd)">'+
+          '<button style="background:none;border:1px solid var(--rd)33;color:var(--rd);font-size:10px;padding:2px 8px;border-radius:5px;cursor:pointer" onclick="delCobro('+c.id+');renderResumen()">🗑 Eliminar</button></div></div>';
+      }).join('');
+      html+='</div>';
+    });
+
   } else {
-    const fil=gastos.filter(g=>{const mk=monthKey(parseDate(g.fecha));return monthK==='all'||mk===monthK;});
+    // Gastos agrupados por categoría
+    const fil=gastos.filter(g=>{const mk=mKey(parseDate(g.fecha));return monthK==='all'||mk===monthK;});
     if(!fil.length){panel.innerHTML='<div style="color:var(--mt2);font-size:13px;padding:8px 0">Sin gastos</div>';return;}
-    html=fil.map(g=>'<div class="pay-item"><div class="pay-info"><div class="pay-name">'+g.concepto+'</div><div class="pay-meta">'+g.fecha+' · <span class="tag-g">'+g.categoria+'</span></div></div><div class="pay-amt"><div class="pay-total" style="color:var(--rd)">-$'+g.monto.toLocaleString('es-AR')+'</div></div><button class="pay-del" onclick="delGasto('+g.id+');renderResumen()">🗑</button></div>').join('');
+    const porCat={};
+    fil.forEach(g=>{if(!porCat[g.categoria])porCat[g.categoria]=[];porCat[g.categoria].push(g);});
+    Object.entries(porCat).forEach(([cat,gs])=>{
+      html+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:1px solid var(--bd);margin-bottom:6px">'+cat+' · $'+gs.reduce((a,g)=>a+g.monto,0).toLocaleString('es-AR')+'</div>';
+      html+=gs.map(g=>'<div class="pay-item"><div class="pay-info"><div class="pay-name">'+g.concepto+'</div><div class="pay-meta">'+g.fecha+'</div></div><div class="pay-amt"><div class="pay-total" style="color:var(--rd)">-$'+g.monto.toLocaleString('es-AR')+'</div></div><button class="pay-del" onclick="delGasto('+g.id+');renderResumen()">🗑</button></div>').join('');
+      html+='</div>';
+    });
   }
-  panel.innerHTML='<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">'+html+'</div>';
+  panel.innerHTML='<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:10px">'+html+'</div>';
 }
 
 function buildStats(){
