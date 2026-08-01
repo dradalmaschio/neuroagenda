@@ -522,6 +522,22 @@ const S=(k,v)=>{try{localStorage.setItem('na4_'+k,JSON.stringify(v));}catch(e){}
 const L=(k,d)=>{try{const v=localStorage.getItem('na4_'+k);return v?JSON.parse(v):d}catch(e){return d}};
 let extraPats=L('ep',[]),patEdits=L('pe',{}),dxPropio=L('dxp',{}),dxIA=L('dxi',{});
 let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resumenesIA=L('ria',{});
+
+// ── Saneamiento de cobros históricos ────────────────────────────
+// Corrige saldos negativos (bug anterior donde cobrado > total preset)
+(function sanitizeCobros(){
+  let changed=false;
+  cobros=cobros.map(c=>{
+    const saldo=c.saldo||0;
+    const cobrado=(c.senia||0)+(c.pago||0);
+    // Si saldo es negativo, corregirlo a 0
+    if(saldo<0){changed=true;return{...c,saldo:0};}
+    // Si total < cobrado (inconsistencia), corregir total
+    if((c.total||0)<cobrado){changed=true;return{...c,total:cobrado,saldo:0};}
+    return c;
+  });
+  if(changed)S('co',cobros);
+})();
 let nextApps=L('napp',{});
 let iaCtx=null,chatH=[],mid=0,wo=0,mslot=null,currentPatId=null,pf='todos',ps='',selTipo='presencial';
 
@@ -1597,7 +1613,7 @@ function renderResumen(){
   const allKeys=[...new Set([...Object.keys(ingByM),...Object.keys(gastByM)])].sort((a,b)=>b.localeCompare(a));
   const ingTotal=cobros.reduce((a,c)=>a+c.senia+c.pago,0);
   const gastTotal=gastos.reduce((a,g)=>a+g.monto,0);
-  const pend=cobros.reduce((a,c)=>a+c.saldo,0);
+  const pend=cobros.reduce((a,c)=>a+Math.max(0,c.saldo||0),0);
   const netTotal=ingTotal-gastTotal;
   let html='';
   html+='<div class="sec-ttl" style="margin-top:4px">Acumulado total</div><div class="fgrid" style="margin-bottom:16px">';
@@ -1608,7 +1624,7 @@ function renderResumen(){
   html+='<div id="fin-det-all" class="fin-det-panel"></div>';
   allKeys.forEach(k=>{
     const cs=ingByM[k]||[],gs=gastByM[k]||[];
-    const ing=cs.reduce((a,c)=>a+c.senia+c.pago,0),gast=gs.reduce((a,g)=>a+g.monto,0),pd=cs.reduce((a,c)=>a+c.saldo,0),net=ing-gast,esCurr=k===curKey;
+    const ing=cs.reduce((a,c)=>a+c.senia+c.pago,0),gast=gs.reduce((a,g)=>a+g.monto,0),pd=cs.reduce((a,c)=>a+Math.max(0,c.saldo||0),0),net=ing-gast,esCurr=k===curKey;
     html+='<div class="fin-mes-sec" id="fms-'+k+'">';
     html+='<div class="fin-mes-hdr" onclick="finToggleMes(\''+k+'\')"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:600">'+monthLabel(k)+'</span>'+(esCurr?'<span style="font-size:10px;background:var(--ac);color:#fff;border-radius:8px;padding:1px 7px">Este mes</span>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;color:'+(net>=0?'var(--gn)':'var(--rd)')+'">'+(net>=0?'+':'-')+'$'+Math.abs(net).toLocaleString('es-AR')+'</span><span class="fin-mes-arr" id="farr-'+k+'">'+(esCurr?'▲':'▼')+'</span></div></div>';
     html+='<div class="fin-mes-body" id="fmb-'+k+'" style="display:'+(esCurr?'block':'none')+'"><div class="fgrid" style="margin:10px 0 6px">';
