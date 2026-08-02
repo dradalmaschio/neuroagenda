@@ -184,7 +184,14 @@ select option{background:var(--bg)}
 .nota-block{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px;margin-bottom:6px}
 .nota-fecha{font-size:11px;font-weight:600;color:var(--ac);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
 .nota-txt{font-size:13px;color:var(--mt);line-height:1.55;white-space:pre-wrap;word-break:break-word}
-.fin-mes-sec{border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:10px;overflow:hidden}
+.pj-card{border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:8px;overflow:hidden}
+.pj-hdr{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;cursor:pointer;background:var(--sf);user-select:none}
+.pj-hdr:active{opacity:.8}
+.pj-body{display:none;padding:10px 13px;border-top:1px solid var(--bd);background:var(--bg)}
+.pj-row{display:flex;flex-direction:column;margin-bottom:8px}
+.pj-nota{border-top:1px dashed var(--bd);padding-top:8px;margin-top:4px}
+.pj-lbl{font-size:10px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.pj-val{font-size:12px;color:var(--tx);line-height:1.4}border-radius:var(--rs);margin-bottom:10px;overflow:hidden}
 .fin-mes-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:var(--sf);user-select:none}
 .fin-mes-hdr:active{background:var(--sf2)}
 .fin-mes-body{padding:0 12px 12px}
@@ -280,6 +287,10 @@ select option{background:var(--bg)}
       <div class="today-ttl" id="hoy-ttl"></div>
       <div id="hoy-slots"></div>
     </div>
+  </div>
+  <div class="sec" id="sec-proxjornada" style="display:none">
+    <div class="sec-ttl">📋 Próxima jornada</div>
+    <div id="prox-jornada-cont"></div>
   </div>
   <div class="sec">
     <div class="sec-ttl">📅 Próximas consultas este mes</div>
@@ -718,8 +729,100 @@ function buildDxPanel(){
   el.innerHTML=html||'<div style="color:var(--mt2);text-align:center;padding:32px">No se encontraron resultados</div>';
 }
 
+function buildProxJornada(){
+  const sec=document.getElementById('sec-proxjornada');
+  const cont=document.getElementById('prox-jornada-cont');
+  if(!sec||!cont)return;
+
+  // Buscar el próximo día a partir de mañana con turnos asignados
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  let proxFecha=null,proxDk=null,proxSlots=null;
+
+  for(let i=1;i<=60;i++){
+    const d=new Date(hoy);d.setDate(d.getDate()+i);
+    const dkk=dk(d);
+    const slots=turnos[dkk]||{};
+    // Ver si hay algún turno asignado (no solo reservado)
+    const asignados=Object.entries(slots).filter(([h,t])=>t&&t.pacienteNombre&&t.pacienteNombre!=='🔒 Reservado');
+    if(asignados.length){proxFecha=d;proxDk=dkk;proxSlots=asignados;break;}
+  }
+
+  if(!proxFecha){sec.style.display='none';return;}
+  sec.style.display='';
+
+  // También incluir los slots del template del día aunque no tengan paciente asignado
+  const dow=proxFecha.getDay();
+  const tpl=ATPL[String(dow)];
+  const horasOrden=tpl?tpl.turnos.map(t=>t.hora):[];
+  // Ordenar asignados por horario del template
+  proxSlots.sort((a,b)=>{
+    const ia=horasOrden.indexOf(a[0]),ib=horasOrden.indexOf(b[0]);
+    return (ia===-1?99:ia)-(ib===-1?99:ib);
+  });
+
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const difDias=Math.round((proxFecha-hoy)/(1000*60*60*24));
+  const difLabel=difDias===1?'mañana':difDias===2?'pasado mañana':'en '+difDias+' días';
+  const fechaLabel=dias[proxFecha.getDay()]+' '+proxFecha.getDate()+' de '+meses[proxFecha.getMonth()];
+
+  let html='<div style="font-size:12px;color:var(--ac);font-weight:600;margin-bottom:10px">'+
+    fechaLabel+' <span style="color:var(--mt);font-weight:400">('+difLabel+')</span> · '+proxSlots.length+' turno'+(proxSlots.length>1?'s asignados':' asignado')+'</div>';
+
+  proxSlots.forEach(([hora,t])=>{
+    const p=getPat(t.pacienteId)||{nombre:t.pacienteNombre,dx_propio:'',dx_ia:'',antecedentes:'',medicacion:'',notas:[]};
+    const pat=getPat(t.pacienteId);
+    const dx=pat?(pat.dx_propio||pat.dx_ia||pat.diagnostico||''):t.pacienteNombre;
+    const dxLabel=dx&&dx!=='sin_diagnostico'?(DL[dx]||dx):'Sin diagnóstico asignado';
+    const antec=pat?.antecedentes||pat?.antec||'';
+    const meds=pat?.medicacion||pat?.meds||'';
+    // Última nota de consulta
+    const notasPac=notas2[t.pacienteId]||[];
+    const ultNota=notasPac.length?notasPac[0]:null;
+    const tipoIcon=t.tipo==='video'?'📹':t.tipo==='domicilio'?'🏠':'🏥';
+    const tipoLabel=t.tipo==='video'?'Videoconsulta':t.tipo==='domicilio'?'Domicilio':'Presencial';
+
+    const pid=t.pacienteId||'';
+    html+='<div class="pj-card" id="pjcard-'+pid+hora.replace(':','')+'">';
+    // Header del turno
+    html+='<div class="pj-hdr" onclick="pjToggle(\'pjbody-'+pid+hora.replace(':','')+'\')">'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<div style="text-align:center;min-width:38px"><div style="font-size:15px;font-weight:700;color:var(--ac)">'+hora+'</div><div style="font-size:10px;color:var(--mt)">'+tipoIcon+'</div></div>'+
+        '<div>'+
+          '<div style="font-size:13px;font-weight:600">'+t.pacienteNombre+'</div>'+
+          '<div style="font-size:11px;color:var(--mt)">'+tipoLabel+(t.motivo?' · '+t.motivo:'')+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        (pid?'<button class="sa" style="font-size:11px" onclick="event.stopPropagation();showPt(\''+pid+'\');sv(\'detail\')">Ficha</button>':'')+
+        '<span style="color:var(--mt);font-size:13px" id="pjarr-'+pid+hora.replace(':','')+'">▼</span>'+
+      '</div>'+
+    '</div>';
+    // Cuerpo colapsable con resumen
+    html+='<div class="pj-body" id="pjbody-'+pid+hora.replace(':','')+'">'+
+      '<div class="pj-row"><span class="pj-lbl">Diagnóstico</span><span class="pj-val">'+dxLabel+'</span></div>'+
+      (antec?'<div class="pj-row"><span class="pj-lbl">Antecedentes</span><span class="pj-val">'+antec+'</span></div>':'')+
+      (meds?'<div class="pj-row"><span class="pj-lbl">Medicación</span><span class="pj-val">'+meds+'</span></div>':'')+
+      (ultNota?'<div class="pj-row pj-nota"><span class="pj-lbl">Última consulta</span><div class="pj-val" style="color:var(--mt2);font-size:11px;margin-top:2px">'+(ultNota.fecha?'<span style="color:var(--mt)">'+ultNota.fecha+'</span> — ':'')+(ultNota.texto||ultNota.nota||'').substring(0,180)+(((ultNota.texto||ultNota.nota||'').length>180)?'…':'')+'</div></div>':'<div class="pj-row"><span class="pj-lbl">Última consulta</span><span class="pj-val" style="color:var(--mt2)">Sin consultas registradas</span></div>')+
+    '</div>';
+    html+='</div>';
+  });
+
+  cont.innerHTML=html;
+}
+
+function pjToggle(bodyId){
+  const body=document.getElementById(bodyId);if(!body)return;
+  const arrId=bodyId.replace('pjbody-','pjarr-');
+  const arr=document.getElementById(arrId);
+  const open=body.style.display!=='none'&&body.style.display!=='';
+  if(open){body.style.display='none';if(arr)arr.textContent='▼';}
+  else{body.style.display='block';if(arr)arr.textContent='▲';}
+}
+
 function buildHome(){
   buildProximas();
+  buildProxJornada();
   const d=new Date(),dow=d.getDay(),dk2=dk(d);
   document.getElementById('hoy-lbl').textContent=fmtD(d);
   const tpl=ATPL[String(dow)];
@@ -802,6 +905,78 @@ function renderSlot(dkk,hora,tipo,a,adHoc){
   return '<div class="aslot"><div class="ah">'+hora+'</div><div class="stag '+(tipo||'presencial')+'">'+((tipo||'presencial')==='video'?'Video':(tipo==='domicilio'?'Dom.':'Cons.'))+'</div>'+pacHtml+accHtml+'</div>';
 }
 
+async function resumirJornada(dkk, btn){
+  const panel=document.getElementById('ag-ia-'+dkk);
+  if(!panel)return;
+
+  // Toggle: si ya tiene contenido, ocultar
+  if(panel.style.display!=='none'&&panel.innerHTML){panel.style.display='none';return;}
+
+  // Recolectar pacientes del día
+  const sd=turnos[dkk]||{};
+  const pacsDia=Object.entries(sd)
+    .filter(([h,t])=>t&&t.pacienteNombre&&t.pacienteNombre!=='🔒 Reservado')
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+
+  if(!pacsDia.length){
+    panel.style.display='';
+    panel.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--mt2)">Sin pacientes asignados este día</div>';
+    return;
+  }
+
+  panel.style.display='';
+  panel.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--mt)">✦ Generando resumen de jornada...</div>';
+  btn.disabled=true;btn.textContent='...';
+
+  // Construir el contexto por paciente
+  const pacContexts=pacsDia.map(([hora,t])=>{
+    const pat=getPat(t.pacienteId);
+    const dx=pat?(pat.dx_propio||pat.dx_ia||pat.diagnostico||''):'';
+    const dxLabel=dx&&dx!=='sin_diagnostico'?(DL[dx]||dx):'';
+    const antec=pat?.antecedentes||'';
+    const meds=pat?.medicacion||'';
+    const notasPac=(notas2[t.pacienteId]||[]).slice(0,3);
+    const notasTexto=notasPac.map(n=>(n.fecha?n.fecha+': ':'')+( n.texto||n.nota||'')).join('\n');
+    return `== ${hora} | ${t.pacienteNombre} ==
+Tipo de consulta: ${t.tipo||'presencial'}${t.motivo?' | Motivo: '+t.motivo:''}
+Diagnóstico registrado: ${dxLabel||'(no registrado)'}
+Antecedentes: ${antec||'(no registrados)'}
+Medicación: ${meds||'(no registrada)'}
+Últimas notas de consulta:
+${notasTexto||'(sin notas)'}`;
+  }).join('\n\n');
+
+  try{
+    const resp=await fetch('https://neuroagenda-ai-proxy.dradalmaschio.workers.dev/',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:1500,
+        system:'Sos una neuróloga que está preparando su jornada. Te doy los datos clínicos de cada paciente del día. Para cada uno, escribí un resumen breve (3-4 líneas máximo) que incluya: diagnóstico principal (si no está explícito, inferilo de las notas), estado clínico reciente, y puntos clave a recordar en la consulta de hoy. Usá lenguaje médico conciso. Separalos claramente.',
+        messages:[{role:'user',content:'Preparame el resumen de la jornada de hoy con estos pacientes:\n\n'+pacContexts}]
+      })
+    });
+    const data=await resp.json();
+    const texto=data?.content?.[0]?.text||'Sin respuesta';
+
+    // Renderizar
+    panel.innerHTML='<div style="padding:10px 14px 14px;border-top:1px solid var(--bd)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      +'<div style="font-size:11px;font-weight:700;color:#818CF8;text-transform:uppercase;letter-spacing:.5px">✦ Resumen IA · Jornada</div>'
+      +'<button onclick="document.getElementById(\'ag-ia-'+dkk+'\').style.display=\'none\'" style="background:none;border:none;color:var(--mt);font-size:18px;cursor:pointer;line-height:1">×</button>'
+      +'</div>'
+      +texto.split('\n').filter(l=>l.trim()).map(l=>{
+        // Detectar headers de paciente
+        const esHeader=l.startsWith('==') || /^\d{2}:\d{2}/.test(l) || (l.length<60&&l.includes(':')&&!l.includes(','));
+        if(esHeader)return '<div style="font-size:12px;font-weight:700;color:var(--ac);margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--bd)">'+l+'</div>';
+        return '<div style="font-size:13px;color:var(--tx);line-height:1.5;margin-bottom:3px">'+l+'</div>';
+      }).join('')
+      +'</div>';
+  } catch(e){
+    panel.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--rd)">Error al contactar la IA. Verificá la conexión.</div>';
+  }
+  btn.disabled=false;btn.textContent='✦ IA';
+}
+
 function buildAg(){
   const base=new Date();base.setDate(base.getDate()+wo*7);
   const mon=new Date(base);mon.setDate(base.getDate()-((base.getDay()+6)%7));
@@ -816,8 +991,11 @@ function buildAg(){
     if(!tpl&&adHocEntries.length===0)return; // día sin turnos ni ad-hoc
     const dayLabel=tpl?tpl.label:['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d];
     html+='<div class="dsec"><div class="dhdr" style="'+(isT?'border-color:var(--ac)':'')+'"><div class="dname" style="'+(isT?'color:var(--ac)':'')+'">'+dayLabel+(isT?' · Hoy':'')+'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px"><div class="ddate">'+dd.toLocaleDateString('es-AR',{day:'numeric',month:'long'})+'</div>'
-      +'<button class="ybtn" style="font-size:11px;padding:2px 8px" onclick="openModAdHoc(\''+dkk+'\')">+ Horario</button></div></div>'
+      +'<div style="display:flex;align-items:center;gap:6px"><div class="ddate">'+dd.toLocaleDateString('es-AR',{day:'numeric',month:'long'})+'</div>'
+      +'<button class="ybtn" style="font-size:11px;padding:2px 8px" onclick="openModAdHoc(\''+dkk+'\')">+ Horario</button>'
+      +'<button class="ybtn" style="font-size:11px;padding:2px 8px;background:rgba(129,140,248,.15);border-color:rgba(129,140,248,.4);color:#818CF8" onclick="resumirJornada(\''+dkk+'\',this)">✦ IA</button>'
+      +'</div></div>'
+      +'<div id="ag-ia-'+dkk+'" style="display:none"></div>'
       +'<div class="dslots">'
       +(tpl?tpl.turnos.map(t=>renderSlot(dkk,t.hora,t.tipo,sd[t.hora],false)).join(''):'')
       +adHocEntries.map(([h,a])=>renderSlot(dkk,h,a.tipo,a,true)).join('')
