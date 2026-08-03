@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Manual de Neurología · Dra. Dal Maschio</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--teal:#1F5C57;--teal-bg:#E8F1EF;--teal-bd:#9EC7C0;--amber:#B5571F;--amber-bg:#FBEFE6;--amber-bd:#E7B488;--slate:#5B6470;--slate-bg:#EEF0EE;--slate-bd:#C7CCC8;--ink:#1B2230;--ink2:#3B4350;--line:#DCE1DD;--bg:#F1F4F2;--panel:#fff;--green:#2F6E4F}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:15px;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+/* HEADER */
+.hdr{background:var(--teal);color:#fff;padding:0}
+.hdr-inner{max-width:900px;margin:0 auto;padding:18px 16px 14px}
+.hdr-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#9EC7C0;margin-bottom:6px}
+.hdr-title{font-family:'Source Serif 4',Georgia,serif;font-size:22px;font-weight:600;line-height:1.2;cursor:pointer}
+.hdr-sub{font-size:12px;color:#B9C2BC;margin-top:4px}
+.hdr-nav{display:flex;gap:8px;margin-top:14px}
+.hdr-btn{background:rgba(255,255,255,.1);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s}
+.hdr-btn.on,.hdr-btn:active{background:rgba(255,255,255,.25)}
+.search-box{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 12px;border-radius:8px;font-size:13px;width:100%;font-family:inherit;margin-top:10px;outline:none}
+.search-box::placeholder{color:#9EC7C0}
+
+/* MAIN */
+.main{max-width:900px;margin:0 auto;padding:16px}
+
+/* HOME — módulos */
+.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:600px){.mod-grid{grid-template-columns:1fr}}
+.mod-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;transition:box-shadow .15s;user-select:none}
+.mod-card:active{box-shadow:0 0 0 2px var(--teal-bd)}
+.mod-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--slate);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.mod-titulo{font-family:'Source Serif 4',Georgia,serif;font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:6px}
+.mod-count{font-size:11px;color:var(--slate)}
+
+/* MÓDULO — lista temas */
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--teal);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:14px;background:none;border:none;font-family:inherit}
+.tema-list{display:flex;flex-direction:column;gap:6px}
+.tema-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;transition:box-shadow .15s}
+.tema-item:active{box-shadow:0 0 0 2px var(--teal-bd)}
+.tema-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);min-width:24px;margin-top:1px}
+.tema-info{}
+.tema-titulo{font-size:14px;font-weight:500;color:var(--ink);line-height:1.3}
+.tema-sub{font-size:12px;color:var(--slate);margin-top:2px}
+
+/* TEMA — contenido */
+.tema-header{margin-bottom:20px}
+.tema-numero{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.tema-h1{font-family:'Source Serif 4',Georgia,serif;font-size:20px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.tema-h1-sub{font-size:13px;color:var(--slate)}
+
+/* SECCIÓN */
+.sec-block{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.sec-hdr{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;user-select:none}
+.sec-hdr-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sec-hdr-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;flex:1}
+.sec-hdr-arr{font-size:12px;color:var(--slate);transition:transform .2s}
+.sec-hdr-arr.open{transform:rotate(180deg)}
+.sec-body{padding:0 14px 14px;display:none}
+.sec-body.open{display:block}
+.sec-intro{font-size:13.5px;color:var(--ink2);line-height:1.6;margin-bottom:10px;margin-top:10px}
+
+/* BULLETS */
+.blist{list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.blist li{display:flex;gap:8px;font-size:13.5px;color:var(--ink2);line-height:1.5}
+.blist li::before{content:"•";color:var(--teal);flex-shrink:0;margin-top:1px}
+
+/* TABLA */
+.table-wrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--teal-bg);color:var(--teal);font-weight:600;padding:8px 10px;text-align:left;border-bottom:1px solid var(--teal-bd)}
+td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top;line-height:1.4}
+tr:last-child td{border-bottom:none}
+
+/* NOTA */
+.nota-box{background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px;color:var(--amber);line-height:1.5}
+.nota-box-label{font-weight:600;margin-bottom:3px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+
+/* ACTUALIZACIÓN GUÍAS */
+.guia-block{background:#FFF7ED;border:1px solid #F0C070;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px;line-height:1.5;color:#7C4F1A}
+.guia-label{font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;color:#B5571F}
+.guia-item{display:flex;gap:6px;margin-bottom:4px}
+.guia-tag{background:#B5571F;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;margin-top:2px;white-space:nowrap}
+
+/* SUBSECCIONES */
+.sub-block{border:1px solid var(--line);border-radius:8px;margin-top:8px;overflow:hidden}
+.sub-hdr{background:var(--slate-bg);padding:8px 12px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.sub-body{padding:10px 12px;display:none}
+.sub-body.open{display:block}
+
+/* SEARCH RESULTS */
+.search-res{display:flex;flex-direction:column;gap:6px}
+.search-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;cursor:pointer}
+.search-item:active{border-color:var(--teal-bd)}
+.search-mod{font-size:10px;color:var(--slate);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace}
+.search-titulo{font-size:14px;font-weight:500;color:var(--ink)}
+.no-results{text-align:center;padding:32px;color:var(--slate);font-size:14px}
+
+.tag-nuevo{display:inline-block;background:var(--amber);color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em;vertical-align:middle;margin-left:5px}
+.tag-act{display:inline-block;background:var(--green);color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em;vertical-align:middle;margin-left:5px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-eyebrow">Ayuda memoria de consultorio</div>
+    <div class="hdr-title" onclick="goHome()">Manual de Neurología Clínica</div>
+    <div class="hdr-sub">Dra. Sandra Beatriz Dal Maschio · Médica Neuróloga</div>
+    <div class="hdr-nav">
+      <button class="hdr-btn" id="btn-home" onclick="goHome()">⌂ Inicio</button>
+      <button class="hdr-btn" id="btn-search" onclick="toggleSearch()">🔍 Buscar</button>
+    </div>
+    <input class="search-box" id="search-input" placeholder="Buscar tema, diagnóstico, medicación..." style="display:none" oninput="doSearch(this.value)" autocomplete="off">
+  </div>
+</header>
+
+<div class="main" id="main-content"></div>
+
+<script>
+const MANUAL_DATA = {
+"manual": {
+"titulo": "Manual de Neurología Clínica",
+"subtitulo": "Ayuda memoria de consultorio",
+"autor": "Dra. Sandra Beatriz Dal Maschio",
+"rol_autor": "Médica Neuróloga",
+"estructura_fija": [
+"sospecha_rapida",
+"clinica",
+"diagnostico_diferencial",
+"estudios",
+"tratamiento",
+"seguimiento"
+],
+"nota_uso": "Cada tema sigue siempre la misma estructura fija, pensada para lectura rápida en consultorio y para minimizar la carga de memoria de trabajo durante la consulta."
+},
+"modulos": [
+{
+"id": "modulo1",
+"titulo": "Demencias y Deterioro Cognitivo",
+"temas": [
+{
+"id": "m1t1",
+"numero": 1,
+"titulo": "Enfoque clínico general del paciente con queja cognitiva",
+"subtitulo": "Antes de nombrar una demencia, ordenar la consulta",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"intro": "Todo paciente que consulta por \"se le olvidan las cosas\" (él mismo o un familiar) requiere responder 5 preguntas antes de pedir ningún estudio:",
+"bullets": [
+"¿Quién se queja: el paciente o el acompañante? (anosognosia = más orgánico)",
+"¿Inicio agudo/subagudo o insidioso? (agudo = pensar delirium/causa secundaria)",
+"¿Compromete la funcionalidad en AVD instrumentales? (clave para diferenciar DCL de demencia)",
+"¿Qué dominio cae primero: memoria episódica, lenguaje, conducta o función ejecutiva/visuoespacial?",
+"¿Hay fármacos, tóxicos, depresión o trastorno del sueño que puedan explicarlo total o parcialmente?"
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial por dominio inicial",
+"tabla": {
+"columnas": [
+"Dominio que cae primero",
+"Pensar primero en",
+"Pista clínica"
+],
+"filas": [
+[
+"Memoria episódica (olvida hechos recientes)",
+"Alzheimer",
+"No beneficia con claves; falla en reconocimiento"
+],
+[
+"Conducta / personalidad",
+"Demencia Frontotemporal variante conductual",
+"Desinhibición, apatía, cambio de personalidad precoz"
+],
+[
+"Lenguaje (anomia, agramatismo)",
+"Afasia Progresiva Primaria",
+"Memoria relativamente preservada al inicio"
+],
+[
+"Visuoespacial + fluctuación + parkinsonismo",
+"Demencia por Cuerpos de Lewy",
+"Alucinaciones visuales, trastorno de conducta en sueño REM"
+],
+[
+"Escalonado, foco vascular",
+"Demencia Vascular",
+"Antecedente de ACV/HTA/FA, inicio brusco o escalonado"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios complementarios de rutina (todo paciente)",
+"bullets": [
+"Laboratorio: hemograma, función renal y hepática, TSH, B12, ácido fólico, calcemia, VDRL/HIV según contexto.",
+"Neuroimagen estructural: RM cerebral con secuencias de volumetría/atrofia regional (o TC si no hay acceso a RM).",
+"Evaluación neuropsicológica completa con CI cuando el cuadro no es típico o hay alta reserva cognitiva (puede enmascarar deterioro real, como en AACC).",
+"Cribados rápidos complementarios según el dominio a explorar: MMSE o MoCA (este último más sensible para DCL), Test del reloj (visuoespacial/ejecutivo), Figura de Rey o Test de Bender (visuoconstructivo).",
+"Evaluación funcional: Lawton-Brody para AVD instrumentales (clave para diferenciar DCL de demencia) y Barthel para AVD básicas en estadios más avanzados. La estadificación global, una vez confirmado el diagnóstico, suele apoyarse en el CDR."
+],
+"nota_clinica": "En pacientes con funcionamiento intelectual premórbido alto, un MMSE de 30/30 no descarta deterioro incipiente; la caída relativa respecto del nivel basal es más sensible que el corte poblacional.",
+"neuroimagen_funcional": {
+"indicacion": "No es de rutina en presentaciones típicas; indicarla cuando el resultado vaya a cambiar la conducta diagnóstica o terapéutica (diferencial dudoso, presentación atípica o de inicio precoz, decisión sobre terapias modificadoras de enfermedad).",
+"tabla": {
+"columnas": [
+"Estudio",
+"Qué evalúa",
+"Utilidad principal"
+],
+"filas": [
+[
+"PET-FDG cerebral",
+"Metabolismo glucídico regional",
+"Mayor rendimiento para diferencial entre tipos de demencia, por el patrón topográfico de hipometabolismo"
+],
+[
+"PET con trazador amiloide",
+"Depósito de placas de amiloide",
+"Alta sensibilidad para Alzheimer; un resultado negativo prácticamente lo descarta como causa"
+],
+[
+"SPECT de perfusión (Tc99m-ECD)",
+"Flujo sanguíneo cerebral regional",
+"Alternativa más accesible al PET-FDG; patrones topográficos análogos con menor resolución"
+],
+[
+"SPECT-DaTSCAN (ioflupano) / TRODAT-1",
+"Integridad de terminales dopaminérgicas presinápticas estriatales",
+"Diferencia demencias con parkinsonismo (Lewy) de Alzheimer puro, donde es normal"
+],
+[
+"PET F-DOPA",
+"Síntesis y almacenamiento presináptico de dopamina",
+"Equivalente funcional al DaTSCAN; mayor uso en centros de investigación"
+]
+]
+},
+"nota": "Disponibilidad en Argentina variable según centro: priorizar la indicación cuando realmente module la conducta clínica."
+},
+"actualizacion_guias": {
+"titulo": "Criterios NIA-AA 2024",
+"texto": "Modelo puramente biológico de diagnóstico y estadificación del Alzheimer (más allá del síndrome clínico): un biomarcador \"Core\" alterado (amiloide o tau temprano) permite diagnosticar la enfermedad biológicamente, con estadificación numérica 1-6 que integra biomarcadores y clínica. Novedad relevante: incorporación formal de biomarcadores en sangre (ej. p-tau217) al panel \"Core\", lo que hará más accesible la confirmación biológica sin PET/LCR en todos los casos. Pensados ante todo para investigación y decisión sobre terapias anti-amiloide; en la práctica clínica general el diagnóstico sigue apoyándose en clínica + neuroimagen estructural/funcional."
+}
+}
+]
+},
+{
+"id": "m1t2",
+"numero": 2,
+"titulo": "Deterioro Cognitivo Leve (DCL / MCI)",
+"subtitulo": "El estadio donde más se decide el pronóstico",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"intro": "Queja cognitiva subjetiva u objetivada en pruebas, sin compromiso significativo de la funcionalidad en AVD. Límite entre envejecimiento normal y demencia.",
+"bullets": [
+"Subtipo DCL amnésico: predomina memoria episódica → mayor riesgo de progresar a Alzheimer.",
+"DCL no amnésico: predomina otro dominio (ejecutivo, lenguaje, visuoespacial) → mayor riesgo de progresar a otras demencias (FTD, Lewy).",
+"Mono-dominio vs multi-dominio: a mayor número de dominios afectados, mayor riesgo de progresión."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave con DCL"
+],
+"filas": [
+[
+"Olvido benigno del envejecimiento",
+"No hay déficit objetivable en pruebas estandarizadas para edad/educación"
+],
+[
+"Depresión (pseudodemencia)",
+"Quejas cognitivas desproporcionadas al rendimiento objetivo; mejora al tratar el ánimo"
+],
+[
+"Demencia incipiente",
+"Ya hay compromiso funcional en AVD instrumentales"
+],
+[
+"Deterioro cognitivo por fármacos/tóxicos",
+"Relación temporal con inicio de fármaco; reversible al suspender"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"Evaluación neuropsicológica completa (igual a la de rutina general) con énfasis en memoria episódica y funciones ejecutivas; el MoCA suele ser más sensible que el MMSE en este estadio.",
+"RM con volumetría hipocampal si hay sospecha de progresión a Alzheimer.",
+"Biomarcadores (PET amiloide, tau, o LCR) si están disponibles y cambian la conducta clínica."
+],
+"neuroimagen_funcional": {
+"texto": "PET-FDG: habitualmente normal o con hipometabolismo mínimo e inespecífico; no es de rutina salvo sospecha fundada de progresión a una demencia concreta."
+}
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"No hay fármaco aprobado específico para DCL. No usar anticolinesterásicos de rutina.",
+"Manejo activo de factores de riesgo vascular (HTA, diabetes, dislipemia, tabaquismo).",
+"Estimulación cognitiva estructurada, ejercicio aeróbico regular, higiene de sueño, manejo de ansiedad/depresión comórbida.",
+"Revisar y de ser posible discontinuar fármacos con carga anticolinérgica o sedante."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Reevaluación clínica y neuropsicológica cada 6-12 meses.",
+"Señal de alarma para acortar el intervalo: aparición de compromiso funcional en AVD instrumentales (manejo de dinero, medicación, conducción)."
+]
+}
+]
+},
+{
+"id": "m1t3",
+"numero": 3,
+"titulo": "Enfermedad de Alzheimer",
+"subtitulo": "La causa más frecuente de demencia",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Inicio insidioso, curso progresivo, sin escalones.",
+"Primer dominio afectado: memoria episódica (no recuerda eventos recientes, repite preguntas, no beneficia con claves ni en reconocimiento).",
+"Progresión típica: memoria → lenguaje (anomia) → función visuoespacial → función ejecutiva → conducta (apatía, irritabilidad) → compromiso de AVD básicas en etapas avanzadas.",
+"Anosognosia parcial o total, frecuentemente mayor que en otras demencias."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave"
+],
+"filas": [
+[
+"Demencia Vascular",
+"Curso escalonado, antecedentes vasculares, signos focales, mayor disfunción ejecutiva relativa"
+],
+[
+"Demencia por Cuerpos de Lewy",
+"Fluctuación cognitiva, alucinaciones visuales tempranas, parkinsonismo, trastorno REM"
+],
+[
+"Demencia Frontotemporal",
+"Cambio conductual/personalidad precede al deterioro de memoria"
+],
+[
+"Depresión / pseudodemencia",
+"Quejas subjetivas mayores al déficit objetivo; antecedente afectivo"
+],
+[
+"Hidrocefalia normotensiva",
+"Tríada: trastorno de la marcha + incontinencia + deterioro cognitivo; ventriculomegalia en imágenes"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"Neuropsicológico: memoria episódica con curva de aprendizaje aplanada, pobre beneficio de claves y de reconocimiento.",
+"Test del reloj y Figura de Rey: útiles para documentar compromiso visuoespacial/visuoconstructivo a medida que avanza el cuadro.",
+"RM cerebral: atrofia hipocampal y temporal medial, escala de Scheltens (MTA).",
+"Biomarcadores cuando estén disponibles: PET amiloide/tau, o LCR (Aβ42 bajo, tau y p-tau elevados) — especialmente útiles en presentaciones atípicas o de inicio precoz.",
+"Laboratorio para excluir causas secundarias (igual al panel de rutina)."
+],
+"neuroimagen_funcional": {
+"tabla": {
+"columnas": [
+"Estudio",
+"Hallazgo"
+],
+"filas": [
+[
+"PET-FDG",
+"Hipometabolismo bilateral en corteza temporoparietal posterior, cíngulo posterior y precúneo, con relativa preservación de corteza sensitivomotora primaria, ganglios basales y cerebelo. Patrón de mayor rendimiento diagnóstico diferencial."
+],
+[
+"SPECT de perfusión (Tc99m-ECD)",
+"Hipoperfusión topográficamente análoga al PET-FDG (temporoparietal posterior bilateral), menor resolución pero más accesible."
+],
+[
+"PET amiloide",
+"Positivo; requisito para indicar terapias anti-amiloide."
+],
+[
+"SPECT-DaTSCAN/TRODAT",
+"Normal en Alzheimer puro — útil para diferenciar de Cuerpos de Lewy cuando hay duda clínica."
+]
+]
+}
+}
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"farmacologico": {
+"tabla": {
+"columnas": [
+"Fármaco",
+"Dosis habitual",
+"Consideración en frágiles/renal"
+],
+"filas": [
+[
+"Donepecilo",
+"5 mg/día → 10 mg/día a las 4-6 semanas",
+"Ajuste por tolerancia más que por función renal; iniciar con dosis baja en adultos mayores frágiles"
+],
+[
+"Rivastigmina (oral o parche)",
+"Oral: 1,5 mg c/12h → titular; Parche: 4,6 mg/día → 9,5 mg/día",
+"Parche preferible en frágiles por mejor tolerancia GI"
+],
+[
+"Galantamina",
+"8 mg/día → 16-24 mg/día",
+"Precaución en insuficiencia renal moderada-severa (ClCr <30: evitar)"
+],
+[
+"Memantina",
+"5 mg/día → titular a 20 mg/día (10 mg c/12h)",
+"Ajustar a 10 mg/día si ClCr 30-49 ml/min; evitar combinaciones con otros NMDA"
+]
+]
+},
+"nota": "Anticolinesterásicos: indicados en estadios leve-moderado. Memantina: indicada en estadio moderado-severo, sola o asociada a anticolinesterásico. Tratar agresivamente comorbilidad vascular: reduce velocidad de progresión clínica."
+},
+"terapias_modificadoras": {
+"titulo": "Terapias modificadoras de enfermedad (anticuerpos anti-amiloide)",
+"bullets": [
+"Lecanemab y Donanemab: anticuerpos monoclonales anti-amiloide. Aprobados por FDA (2023-2024) y por EMA (2025) para DCL o demencia leve por Alzheimer, con biomarcador amiloide positivo confirmado, en pacientes no homocigotas para ApoE ε4.",
+"No aprobados por ANMAT en Argentina a la fecha de esta revisión — verificar estado regulatorio actualizado antes de plantearlos en consultorio.",
+"Riesgo principal: ARIA (anomalías de imagen relacionadas con amiloide — edema/ARIA-E o microhemorragias/ARIA-H), requiere RM de monitoreo seriado.",
+"Efecto modesto sobre la velocidad de progresión cognitiva/funcional a 18 meses; no son curativos y no sustituyen el tratamiento sintomático."
+]
+},
+"no_farmacologico": {
+"bullets": [
+"Estimulación cognitiva, ejercicio físico regular, rutina estructurada, apoyo a cuidadores (predictor fuerte de institucionalización)."
+]
+}
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Control clínico cada 3-6 meses según estadio.",
+"Reevaluación cognitiva (MMSE u otra) en cada control para monitorizar velocidad de progresión.",
+"Estadificar severidad con CDR; cuantificar síntomas conductuales/psicóticos con NPI si aparecen.",
+"Evaluar siempre carga del cuidador (escala de Zarit) y riesgo de claudicación familiar.",
+"Alarma para reevaluación más temprana: caída brusca de funcionalidad (pensar delirium superpuesto) o aparición de síntomas psicóticos/conductuales severos."
+]
+}
+]
+},
+{
+"id": "m1t4",
+"numero": 4,
+"titulo": "Demencia Vascular",
+"subtitulo": "Curso escalonado, base vascular",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Inicio relacionado temporalmente con evento vascular, o curso escalonado/fluctuante sin evento único claro (forma subcortical).",
+"Predominio de disfunción ejecutiva y enlentecimiento del procesamiento sobre el déficit amnésico puro.",
+"Signos motores asociados: marcha a pequeños pasos, signos piramidales, labilidad emocional (afecto pseudobulbar)."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave"
+],
+"filas": [
+[
+"Alzheimer",
+"Curso continuo sin escalones; memoria episódica como déficit predominante"
+],
+[
+"Demencia mixta (vascular + Alzheimer)",
+"Muy frecuente en la práctica real; combinar criterios de ambas, considerar siempre"
+],
+[
+"Depresión vascular",
+"Enlentecimiento y apatía sin déficit cognitivo objetivable proporcional"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"RM cerebral: lesiones isquémicas corticales/subcorticales, leucoencefalopatía (escala de Fazekas), microsangrados.",
+"Evaluación de factores de riesgo vascular: perfil lipídico, glucemia/HbA1c, ECG, eco-doppler de vasos de cuello si corresponde.",
+"Neuropsicológico: perfil disejecutivo, enlentecido, con memoria relativamente más preservada en reconocimiento que en Alzheimer."
+],
+"neuroimagen_funcional": {
+"texto": "PET-FDG / SPECT de perfusión: patrón parcheado, multifocal, asimétrico, cortical y subcortical, coincidente con territorios vasculares — contrasta con el patrón simétrico temporoparietal posterior del Alzheimer."
+}
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Control estricto de factores de riesgo vascular: antiagregación o anticoagulación según indicación, control de HTA, diabetes, dislipemia, cesación tabáquica.",
+"Anticolinesterásicos y memantina: evidencia más débil que en Alzheimer; pueden considerarse en demencia mixta o con componente cognitivo significativo, off-label/caso por caso.",
+"Rehabilitación cognitiva y kinesiológica según compromiso motor asociado."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Control cardiovascular y neurológico cada 3-6 meses.",
+"Reevaluación de imágenes si hay nuevo escalón clínico (sospecha de nuevo evento vascular)."
+]
+}
+]
+},
+{
+"id": "m1t5",
+"numero": 5,
+"titulo": "Demencia Mixta",
+"subtitulo": "Alzheimer + Vascular: la combinación más subdiagnosticada",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"texto": "Pensarla siempre en el adulto mayor con factores de riesgo vascular (HTA, diabetes, FA, dislipemia, ACV previo) que presenta un perfil predominantemente amnésico tipo Alzheimer. Es, en la práctica, la presentación más frecuente en consultorio — más que las formas \"puras\" de cualquiera de las dos entidades."
+},
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Combina el patrón amnésico progresivo del Alzheimer (falla en codificación, pobre beneficio de claves y reconocimiento) con el perfil disejecutivo y enlentecido de la enfermedad vascular.",
+"El curso puede ser progresivo continuo (predomina componente Alzheimer) o mostrar escalones superpuestos a la progresión gradual (predomina componente vascular).",
+"Pueden coexistir signos focales leves, marcha alterada o labilidad emocional (afecto pseudobulbar) sobre un fondo de deterioro amnésico tipo Alzheimer.",
+"La presencia de ambos componentes suele asociarse a mayor severidad funcional para el mismo grado de atrofia o de carga vascular, comparado con cualquiera de las dos causas por separado (efecto aditivo/sinérgico)."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave con Demencia Mixta"
+],
+"filas": [
+[
+"Alzheimer puro",
+"Sin carga vascular significativa en imágenes; sin antecedentes vasculares relevantes"
+],
+[
+"Demencia Vascular pura",
+"Sin atrofia hipocampal desproporcionada; perfil amnésico menos marcado, predomina lo disejecutivo"
+],
+[
+"Deterioro cognitivo por enfermedad de pequeño vaso aislada",
+"Leucoencefalopatía presente pero sin biomarcadores ni perfil de memoria compatible con Alzheimer"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"RM cerebral: buscar activamente ambos patrones a la vez — atrofia hipocampal/temporal medial (escala de Scheltens) Y carga vascular (escala de Fazekas, infartos lacunares, microsangrados). No descartar Alzheimer solo porque haya lesión vascular visible, ni viceversa.",
+"Neuropsicológico: perfil amnésico con pobre reconocimiento (sello de Alzheimer) combinado con enlentecimiento y disfunción ejecutiva (sello vascular).",
+"Panel vascular completo: perfil lipídico, glucemia/HbA1c, ECG (buscar FA), eventualmente eco-doppler de vasos de cuello.",
+"Biomarcadores de Alzheimer (PET amiloide/tau o LCR) si están disponibles y el resultado cambiaría la conducta terapéutica, especialmente en presentaciones dudosas."
+],
+"neuroimagen_funcional": {
+"texto": "PET-FDG/SPECT de perfusión: buscar la coexistencia de ambos patrones — hipometabolismo/hipoperfusión temporoparietal posterior (componente Alzheimer) superpuesto a defectos parcheados multifocales (componente vascular). No descartar uno por la presencia franca del otro."
+}
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Control vascular agresivo como pilar: antiagregación o anticoagulación según indicación, manejo estricto de HTA, diabetes y dislipemia, cesación tabáquica. Es la intervención con mayor impacto en frenar la progresión del componente vascular.",
+"Farmacológico: anticolinesterásicos (donepecilo, rivastigmina, galantamina) indicados igual que en Alzheimer puro, dado el componente amnésico — evidencia consistente con beneficio sintomático similar.",
+"Memantina: considerar en estadio moderado-severo, igual criterio que en Alzheimer.",
+"Revisar siempre carga anticolinérgica y sedante de la medicación concomitante, dado que estos pacientes suelen ser polimedicados por su comorbilidad vascular.",
+"Estimulación cognitiva, ejercicio físico aeróbico (beneficia ambos componentes), rehabilitación si hay secuela motora, apoyo estructurado al cuidador."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Control clínico cada 3-6 meses, igual que en Alzheimer, pero con monitoreo cardiovascular sumado (presión arterial, perfil metabólico).",
+"Reevaluar imágenes si aparece un escalón clínico nuevo (sospecha de evento vascular agudo agregado).",
+"Señal de alarma para acortar el intervalo: caída funcional brusca (pensar nuevo ACV o delirium superpuesto) o descompensación de un factor de riesgo vascular mal controlado."
+]
+}
+]
+},
+{
+"id": "m1t6",
+"numero": 6,
+"titulo": "Demencia por Cuerpos de Lewy",
+"subtitulo": "Fluctuación + alucinaciones + parkinsonismo",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"intro": "Criterios centrales (clínicos), con diagnóstico probable si ≥2 presentes, o 1 central + ≥1 indicativo de biomarcador:",
+"bullets": [
+"Fluctuación cognitiva marcada con variación en atención y alerta.",
+"Alucinaciones visuales recurrentes, típicamente bien formadas y detalladas.",
+"Parkinsonismo (bradicinesia, temblor de reposo, y/o rigidez), de aparición posterior o concurrente al deterioro cognitivo.",
+"Trastorno de conducta durante el sueño REM (TCSR), frecuentemente años antes del deterioro cognitivo.",
+"Hipersensibilidad marcada a neurolépticos: dato de alarma diagnóstica y de seguridad terapéutica.",
+"Disautonomía: hipotensión ortostática, constipación, síncopes."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave"
+],
+"filas": [
+[
+"Demencia asociada a Parkinson",
+"El parkinsonismo precede al deterioro cognitivo por más de 1 año (regla del año)"
+],
+[
+"Alzheimer",
+"Sin fluctuación marcada ni alucinaciones visuales tempranas; sin parkinsonismo precoz"
+],
+[
+"Delirium",
+"Inicio agudo, curso de horas/días, causa precipitante identificable (cribado rápido con CAM)"
+],
+[
+"Psicosis primaria de inicio tardío",
+"Sin parkinsonismo ni TCSR; alucinaciones de otro tipo predominante"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"Polisomnografía si hay sospecha de TCSR (alto valor predictivo, biomarcador indicativo).",
+"SPECT/PET de transportador de dopamina (DaTscan): hipocaptación en ganglios basales (biomarcador indicativo).",
+"RM cerebral: relativa preservación del hipocampo en comparación con Alzheimer (útil en diferencial).",
+"NPI para cuantificar alucinaciones y otros síntomas conductuales a lo largo del seguimiento.",
+"Evaluación cardiovascular autonómica si hay disautonomía clínica."
+],
+"neuroimagen_funcional": {
+"titulo": "Neuroimagen funcional (clave en esta entidad)",
+"tabla": {
+"columnas": [
+"Estudio",
+"Hallazgo"
+],
+"filas": [
+[
+"SPECT-DaTSCAN (ioflupano) / TRODAT-1",
+"Hipocaptación en el estriado (putamen > caudado), habitualmente asimétrica. Biomarcador indicativo central — y lo que más distingue de Alzheimer, donde este estudio es normal."
+],
+[
+"PET-FDG",
+"Además del patrón temporoparietal, hipometabolismo occipital (cuneus/precúneo) — \"signo occipital\". El signo de la isla del cíngulo (preservación relativa del metabolismo en cíngulo posterior) es altamente específico para diferenciar de Alzheimer."
+],
+[
+"Gammagrafía cardíaca 123I-MIBG",
+"Biomarcador indicativo adicional (4° consenso DLB Consortium) — denervación simpática cardíaca (captación reducida) en Lewy, a diferencia de Alzheimer. Menor disponibilidad pero alta especificidad."
+]
+]
+}
+}
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Anticolinesterásicos (rivastigmina con la evidencia más robusta en este grupo): de elección para el componente cognitivo y conductual.",
+"Parkinsonismo: levodopa en dosis bajas, con monitoreo estrecho porque puede empeorar las alucinaciones.",
+"Manejo de la disautonomía: medidas posturales, fludrocortisona o midodrina si hipotensión ortostática sintomática."
+],
+"alertas": [
+"EVITAR neurolépticos típicos y la mayoría de los atípicos por riesgo de reacción de hipersensibilidad severa (rigidez extrema, deterioro de conciencia). Si es imprescindible tratar psicosis, usar quetiapina en dosis bajas o clozapina con supervisión, siempre con extrema cautela."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Control cada 3 meses en etapas activas por riesgo de caídas, fluctuación y complicaciones por fármacos.",
+"Reforzar siempre en la historia clínica y en epicrisis la hipersensibilidad a neurolépticos, para cualquier interconsulta o internación futura."
+]
+}
+]
+},
+{
+"id": "m1t7",
+"numero": 7,
+"titulo": "Demencia Frontotemporal",
+"subtitulo": "El cambio de personalidad antecede al de memoria",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"subsecciones": [
+{
+"subtitulo": "Variante conductual (la más frecuente)",
+"bullets": [
+"Desinhibición, apatía, pérdida de empatía, conductas compulsivas/ritualistas, cambios en la conducta alimentaria, juicio social alterado.",
+"Memoria episódica relativamente preservada en etapas iniciales (contraste clave con Alzheimer)."
+]
+},
+{
+"subtitulo": "Variantes de lenguaje (afasia progresiva primaria)",
+"bullets": [
+"Variante no fluente/agramática: habla esforzada, errores gramaticales, apraxia del habla.",
+"Variante semántica: pérdida del significado de las palabras y objetos, con fluencia conservada."
+]
+}
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave"
+],
+"filas": [
+[
+"Trastorno psiquiátrico primario (depresión, bipolar, esquizofrenia de inicio tardío)",
+"Sin atrofia frontotemporal en imágenes; historia psiquiátrica previa; curso más fluctuante con el tratamiento psiquiátrico"
+],
+[
+"Alzheimer de inicio precoz",
+"Memoria episódica como déficit predominante desde el inicio"
+],
+[
+"Parálisis supranuclear progresiva / degeneración corticobasal",
+"Síndromes con componente motor/oculomotor sobreagregado (parte del espectro FTD)"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"RM cerebral: atrofia frontal y/o temporal anterior, frecuentemente asimétrica.",
+"Neuropsicológico: déficit ejecutivo y conductual desproporcionado al déficit de memoria; pruebas de cognición social. El FAB es útil como cribado rápido de disfunción frontal en consultorio.",
+"NPI para cuantificar desinhibición, apatía y otras conductas a lo largo del seguimiento.",
+"Estudio genético si hay historia familiar (mutaciones en MAPT, GRN, C9orf72, entre otras)."
+],
+"neuroimagen_funcional": {
+"texto": "PET-FDG: hipometabolismo frontal y/o temporal anterior, con frecuencia asimétrico, y preservación relativa de regiones posteriores — patrón topográfico inverso al de Alzheimer."
+}
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"No hay tratamiento específico aprobado. Anticolinesterásicos y memantina NO están indicados de rutina (pueden incluso empeorar la conducta en algunos casos).",
+"ISRS: pueden ayudar con conductas compulsivas, desinhibición e irritabilidad.",
+"Antipsicóticos atípicos en dosis bajas solo si hay conductas de riesgo, con monitoreo estrecho de efectos extrapiramidales.",
+"Intervenciones conductuales y estructuración ambiental: pilar central del manejo."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Control cada 3-4 meses; foco en seguridad (riesgo social, financiero, conductas de riesgo) más que en cognición pura.",
+"Apoyo familiar intensivo: la carga del cuidador suele ser mayor que en Alzheimer por el componente conductual."
+]
+}
+]
+},
+{
+"id": "m1t8",
+"numero": 8,
+"titulo": "Causas reversibles y demencias secundarias",
+"subtitulo": "Las que no hay que dejar pasar (\"red flags\")",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"texto": "Pensar siempre causa secundaria/reversible cuando hay: inicio agudo o subagudo, edad atípicamente joven, curso fluctuante marcado, signos sistémicos asociados, o un único hallazgo de imagen/laboratorio que no encaja con el patrón degenerativo esperado. El CAM es la herramienta de cribado más rápida cuando la sospecha principal es delirium."
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Principales causas a descartar",
+"tabla": {
+"columnas": [
+"Causa",
+"Pista clínica / hallazgo"
+],
+"filas": [
+[
+"Hipotiroidismo",
+"Bradipsiquia, intolerancia al frío, TSH elevada"
+],
+[
+"Déficit de B12",
+"Neuropatía periférica asociada, anemia macrocítica, niveles bajos de B12"
+],
+[
+"Hidrocefalia normotensiva",
+"Tríada de Hakim-Adams: marcha + incontinencia + deterioro cognitivo; ventriculomegalia desproporcionada"
+],
+[
+"Hematoma subdural crónico",
+"Antecedente de caída/TEC, anticoagulación, curso fluctuante"
+],
+[
+"Depresión (pseudodemencia)",
+"Quejas subjetivas desproporcionadas; antecedente afectivo; mejora con tratamiento antidepresivo"
+],
+[
+"Efecto de fármacos (anticolinérgicos, benzodiacepinas, opioides, antiepilépticos)",
+"Relación temporal con el inicio/cambio de dosis; mejora al ajustar"
+],
+[
+"Tumores / lesiones ocupantes de espacio",
+"Signos focales, cefalea, curso subagudo"
+],
+[
+"Encefalopatías autoinmunes/paraneoplásicas",
+"Curso rápidamente progresivo, crisis epilépticas, trastorno del movimiento asociado"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios orientados",
+"bullets": [
+"Panel de laboratorio ampliado dirigido por sospecha clínica (función tiroidea, B12/fólico, serologías, autoinmunidad si corresponde).",
+"Neuroimagen siempre indicada ante curso atípico, inicio antes de los 65 años, o foco neurológico.",
+"Revisión exhaustiva y sistemática de toda la medicación, con especial atención a carga anticolinérgica acumulada."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Tratar la causa de base: sustitución hormonal, suplementación, derivación neuroquirúrgica (hidrocefalia, hematoma subdural), suspensión/ajuste de fármacos, tratamiento del trastorno afectivo.",
+"El grado de reversibilidad depende del tiempo de evolución antes del diagnóstico: cuanto antes se identifica, mayor probabilidad de recuperación completa."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Reevaluación cognitiva 2-3 meses después de corregida la causa, para confirmar reversibilidad o identificar deterioro degenerativo subyacente coexistente."
+]
+}
+]
+},
+{
+"id": "m1t9",
+"numero": 9,
+"titulo": "Pseudodeterioro Cognitivo: Depresión e Hiperhomocisteinemia",
+"subtitulo": "Dos causas que se piden y se tratan",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"texto": "Pensar pseudodeterioro cuando la queja cognitiva subjetiva es desproporcionadamente mayor al hallazgo objetivo en pruebas, cuando hay antecedente afectivo o factores de riesgo nutricional/metabólico, o cuando el perfil de memoria de trabajo cae sin compromiso del almacenamiento (codificación y reconocimiento conservados)."
+},
+{
+"tipo": "subtema",
+"id": "m1t9.1",
+"titulo": "9.1 Pseudodemencia depresiva",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Queja cognitiva subjetiva intensa (\"no me puedo concentrar\", \"se me olvida todo\") desproporcionada al rendimiento objetivo en pruebas estandarizadas.",
+"Predomina la afectación de atención sostenida y memoria de trabajo, con relativa preservación de la codificación y el almacenamiento (buen desempeño en reconocimiento diferido).",
+"Inicio más definido en el tiempo (coincide con el episodio afectivo) que en una demencia degenerativa, de curso insidioso.",
+"Anosognosia ausente o mínima: el paciente reconoce y enfatiza su propia dificultad, a diferencia del paciente con Alzheimer.",
+"Frecuentemente hay enlentecimiento psicomotor, apatía, alteración del sueño y del apetito, antecedente personal o familiar de trastorno del ánimo."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": [
+"Entidad",
+"Diferencia clave con pseudodemencia depresiva"
+],
+"filas": [
+[
+"Alzheimer",
+"Falla en codificación y reconocimiento (no solo en evocación); anosognosia; curso insidioso sin correlato temporal afectivo"
+],
+[
+"DCL",
+"Déficit objetivable estable en el tiempo, sin correlato con episodio afectivo agudo"
+],
+[
+"Depresión como comorbilidad de una demencia real",
+"Ambas pueden coexistir: la respuesta parcial o nula al tratamiento antidepresivo orienta a organicidad subyacente"
+]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"Escalas de cribado afectivo: HADS, GDS (Geriatric Depression Scale) en adultos mayores.",
+"Neuropsicológico con énfasis en la disociación codificación/evocación vs. atención y memoria de trabajo.",
+"Resto del panel de rutina (laboratorio, neuroimagen) para excluir causa orgánica concomitante, ya que depresión y deterioro cognitivo neurodegenerativo coexisten con frecuencia, especialmente en el adulto mayor."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Tratamiento antidepresivo activo (farmacológico y/o psicoterapéutico) según el episodio.",
+"Reevaluación cognitiva luego de la remisión afectiva: la mejoría cognitiva concomitante con la mejoría del ánimo confirma el diagnóstico de pseudodemencia.",
+"Uso de apoyos externos (notas, listas, rutinas estructuradas) mientras dura el cuadro."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Reevaluación neuropsicológica a los 3-6 meses de remitido el episodio afectivo.",
+"Señal de alarma: persistencia del déficit cognitivo a pesar de remisión afectiva completa → reconsiderar proceso neurodegenerativo subyacente enmascarado."
+]
+}
+]
+},
+{
+"tipo": "subtema",
+"id": "m1t9.2",
+"titulo": "9.2 Hiperhomocisteinemia",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Perfil cognitivo variable: puede presentarse como enlentecimiento, disfunción ejecutiva o un cuadro indistinguible clínicamente de DCL o de un deterioro vascular subclínico.",
+"Factor de riesgo vascular independiente: favorece enfermedad de pequeño vaso, por lo que con frecuencia se solapa clínicamente con el perfil de demencia vascular o mixta.",
+"Buscar activamente antecedentes y datos asociados: dieta pobre en folato/B12, malabsorción, gastritis atrófica/uso crónico de IBP, metformina, insuficiencia renal, hipotiroidismo, antecedente de eventos trombóticos.",
+"Puede acompañarse de neuropatía periférica o síntomas de degeneración combinada subaguda medular si coexiste déficit de B12 franco."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial / interpretación de laboratorio",
+"tabla": {
+"columnas": [
+"Patrón",
+"Interpretación"
+],
+"filas": [
+[
+"Homocisteína elevada + ácido metilmalónico (AMM) elevado",
+"Sugiere déficit de B12 como causa (la vía dependiente de B12 está bloqueada)"
+],
+[
+"Homocisteína elevada + AMM normal",
+"Orienta a déficit de folato, de B6, o causa genética (ej. mutación MTHFR) más que a déficit de B12"
+],
+[
+"Homocisteína normal + B12 baja límite",
+"No descartar déficit funcional de B12; correlacionar con AMM y clínica"
+],
+[
+"Homocisteína elevada + función renal alterada",
+"Considerar el componente de aclaramiento renal reducido como contribuyente, no solo nutricional"
+]
+]
+},
+"nota": "El AMM es el dato que mejor discrimina si la hiperhomocisteinemia tiene un componente de déficit de B12 real (a diferencia de la homocisteína sola, que es menos específica)."
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios",
+"bullets": [
+"Homocisteína plasmática y ácido metilmalónico (de rutina).",
+"B12, ácido fólico, función renal, TSH.",
+"Considerar estudio de MTHFR si hay hiperhomocisteinemia persistente sin causa nutricional/renal clara, o historia familiar de trombofilia/eventos vasculares precoces.",
+"RM cerebral si hay sospecha de enfermedad de pequeño vaso asociada (leucoencefalopatía, microsangrados)."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Suplementación dirigida según el patrón de laboratorio: B12 (oral o parenteral según severidad y causa de malabsorción) si AMM elevado; ácido fólico y B6 si el patrón orienta a esas deficiencias.",
+"Corregir o suspender, si es posible, fármacos contribuyentes (metformina, IBP crónicos) en conjunto con el médico tratante correspondiente.",
+"Control de otros factores de riesgo vascular concomitantes, dado que la hiperhomocisteinemia rara vez actúa como causa aislada.",
+"La evidencia sobre si corregir la homocisteína per se reduce el deterioro cognitivo es mixta; el objetivo clínico principal es corregir la deficiencia subyacente (B12/fólico) y el riesgo vascular asociado."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Recontrol de homocisteína y AMM a los 2-3 meses de iniciada la suplementación, para confirmar respuesta bioquímica.",
+"Reevaluación cognitiva a los 3-6 meses; si no hay mejoría a pesar de corrección bioquímica completa, reconsiderar causa neurodegenerativa concomitante."
+]
+}
+]
+}
+]
+},
+{
+"id": "m1t10",
+"numero": 10,
+"titulo": "Depresión: Diagnóstico, Tratamiento e Imágenes Funcionales",
+"secciones": [
+{
+"tipo": "diagnostico",
+"titulo": "Diagnóstico",
+"bullets": [
+"Criterios clínicos (DSM-5 / CIE-11): ánimo deprimido y/o anhedonia presentes la mayor parte del día, casi todos los días, durante al menos 2 semanas, junto con ≥4 síntomas adicionales (alteración de sueño, apetito/peso, energía, concentración, culpa/inutilidad, enlentecimiento o agitación psicomotriz, ideación de muerte), con impacto funcional.",
+"Escalas de cribado y seguimiento: PHQ-9 o Escala de Hamilton para adultos; GDS específicamente en adultos mayores, donde la presentación puede ser más somática que afectiva.",
+"En el adulto mayor: priorizar el cribado activo de ideación suicida en cada control, ya que la presentación puede ser menos verbalizada espontáneamente.",
+"Diferencial obligado en contexto neurológico: pseudodemencia depresiva (sección 9.1), depresión vascular (ver Demencia Vascular), depresión secundaria a enfermedad neurológica (Parkinson, post-ACV, esclerosis múltiple) y depresión por fármacos (corticoides, interferón, algunos antihipertensivos)."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"tabla": {
+"columnas": [
+"Línea",
+"Fármaco",
+"Dosis habitual"
+],
+"filas": [
+[
+"1ª línea",
+"Sertralina",
+"50 mg/día → titular hasta 100-200 mg/día"
+],
+[
+"1ª línea",
+"Escitalopram",
+"10 mg/día → titular hasta 20 mg/día (precaución con QT en dosis altas en adultos mayores)"
+],
+[
+"1ª línea (con dolor crónico o apatía marcada)",
+"Duloxetina / Venlafaxina (IRSN)",
+"Duloxetina 30-60 mg/día; Venlafaxina 75 mg/día → titular hasta 150-225 mg/día"
+],
+[
+"Predominio de apatía/anergia",
+"Bupropión",
+"150 mg/día → titular hasta 300 mg/día; evitar si hay antecedente de crisis convulsivas"
+],
+[
+"Refractaria/severa con riesgo vital o síntomas psicóticos",
+"Terapia electroconvulsiva (TEC)",
+"Derivar a centro especializado; eficacia y rapidez de respuesta superiores en depresión severa refractaria"
+]
+]
+},
+"bullets": [
+"Psicoterapia (TCC o interpersonal) como complemento desde el inicio, no solo en casos leves.",
+"Reevaluar respuesta a las 4-6 semanas de dosis plena antes de catalogar como refractaria; cambio de fármaco o potenciación (ej. quetiapina en dosis bajas o litio) si no hay respuesta adecuada.",
+"Vigilar siempre interacciones con la medicación neurológica de base (ver alerta de síndrome serotoninérgico con IMAO-B en el Módulo 2)."
+]
+},
+{
+"tipo": "neuroimagen_funcional",
+"titulo": "Imágenes funcionales",
+"bullets": [
+"No son de uso diagnóstico de rutina en depresión primaria; su valor principal es el diferencial con causas orgánicas cuando hay duda diagnóstica (ej. pseudodemencia vs. demencia degenerativa).",
+"PET-FDG: hipometabolismo en corteza prefrontal dorsolateral, con hipermetabolismo relativo en amígdala y cíngulo subgenual; hallazgos inconsistentes entre pacientes y sin patrón patognomónico individual.",
+"SPECT de perfusión (Tc99m-ECD): hipoperfusión frontal, de forma más inespecífica que en PET-FDG.",
+"Utilidad práctica: ausencia del patrón temporoparietal posterior típico de Alzheimer (o de cualquier otro patrón degenerativo específico) en un paciente con queja cognitiva y sospecha de pseudodemencia depresiva refuerza el diagnóstico de causa afectiva por sobre causa neurodegenerativa."
+]
+}
+]
+},
+{
+"id": "m1t11",
+"numero": 11,
+"titulo": "TEA en adultos (Trastorno del Espectro Autista)",
+"subtitulo": "Diagnóstico tardío: cuando la infancia no encajó pero nadie lo nombró",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"texto": "Adulto con dificultades persistentes en comunicación/interacción social desde la infancia (aunque sin diagnóstico previo), patrones repetitivos o intereses restringidos, hipersensibilidad sensorial, rigidez ante cambios, frecuente \"camuflaje\" social (esfuerzo activo por imitar conducta neurotípica, más descrito en mujeres) y comorbilidad frecuente con TDAH, ansiedad o depresión."
+},
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Déficits persistentes en comunicación e interacción social: dificultad en la reciprocidad social, lenguaje no verbal atípico (contacto visual, expresión facial), dificultad para desarrollar y mantener relaciones acorde al contexto.",
+"Patrones restringidos/repetitivos de conducta: rigidez cognitivo-conductual, intereses intensos y circunscriptos, estereotipias motoras (\"stimming\"), insistencia en rutinas, hiper o hiporreactividad sensorial.",
+"En adultos sin diagnóstico infantil: historia retrospectiva de dificultades sociales desde la niñez aunque compensadas; \"camuflaje\" (masking) y agotamiento social (\"burnout autista\") tras sostener ese esfuerzo por años.",
+"Comorbilidad muy frecuente: TDAH (hasta la mitad de los casos), ansiedad, depresión, trastornos del sueño, hipersensibilidad sensorial significativa."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": ["Entidad", "Diferencia clave"],
+"filas": [
+["TDAH puro", "Inatención/impulsividad sin patrón restringido-repetitivo ni déficit social cualitativo de base (aunque coexisten con frecuencia)"],
+["Trastorno de ansiedad social", "Evitación social motivada por miedo al juicio, sin diferencia cualitativa en la comprensión social de base"],
+["Trastorno de personalidad esquizoide/evitativo", "Ausencia de patrones restringidos/repetitivos ni alteraciones sensoriales propias del TEA"],
+["Espectro psicótico", "Presencia de síntomas positivos (alucinaciones, delirios), ausentes en el TEA"]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios (herramientas diagnósticas)",
+"bullets": [
+"Entrevista clínica estructurada con historia evolutiva desde la infancia (informante familiar cuando sea posible).",
+"AQ (Autism Spectrum Quotient): cribado autoaplicado, 50 ítems, primera línea para orientar la sospecha en adultos.",
+"RAADS-R: específico para cribado en adultos sin diagnóstico previo, más sensible que el AQ en presentaciones sutiles o con buen camuflaje.",
+"ADOS-2: observación semiestructurada, estándar de referencia; requiere entrenamiento y administración por especialista.",
+"ADI-R: entrevista a un informante sobre desarrollo temprano, complementa al ADOS-2.",
+"Evaluación neuropsicológica para mapear perfil cognitivo y comorbilidades (TDAH, ansiedad)."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"No existe tratamiento farmacológico específico para el núcleo del TEA; el abordaje es psicoeducativo y de adaptación del entorno.",
+"Psicoterapia adaptada al estilo cognitivo autista; entrenamiento en habilidades sociales solo si el paciente lo desea, nunca impuesto.",
+"Tratamiento farmacológico dirigido a comorbilidades específicas (ansiedad, depresión, TDAH comórbido) según corresponda.",
+"Adaptaciones ambientales/laborales (reducción de sobrecarga sensorial, rutinas predecibles) con frecuencia más impactantes que cualquier intervención farmacológica."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Reevaluar comorbilidades psiquiátricas periódicamente (ansiedad, depresión, riesgo de burnout autista).",
+"Validar la experiencia de quienes llegan tras autoidentificación o diagnóstico tardío; derivar a grupos de apoyo o especialistas en neurodiversidad adulta cuando sea posible."
+]
+}
+]
+},
+{
+"id": "m1t12",
+"numero": 12,
+"titulo": "TDA/TDAH en adultos (con y sin hiperactividad)",
+"subtitulo": "El diagnóstico no caducó al cumplir 18",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"texto": "Dificultades persistentes de atención, organización y/o impulsividad presentes desde la infancia (con o sin diagnóstico previo), que generan impacto funcional en el ámbito laboral, académico o relacional en la adultez. Diferenciar la presentación con predominio inatento (TDA, frecuentemente subdiagnosticada, más en mujeres) de la presentación combinada/hiperactiva."
+},
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Presentación inatenta (sin hiperactividad marcada): dificultad para sostener la atención, distractibilidad, desorganización, procrastinación, olvidos frecuentes, dificultad para finalizar tareas, desconexión interna (\"estar en las nubes\").",
+"Presentación hiperactiva-impulsiva: inquietud motora (en adultos con frecuencia se manifiesta como inquietud interna más que motora franca), impulsividad verbal/conductual, dificultad para esperar turno, interrupciones.",
+"Presentación combinada: coexisten ambos perfiles.",
+"Requisito diagnóstico: síntomas presentes desde antes de los 12 años (aunque el diagnóstico formal sea tardío), persistencia en al menos 2 contextos (laboral, social, doméstico) e impacto funcional significativo.",
+"Comorbilidad muy frecuente: ansiedad, depresión, TEA, trastornos de aprendizaje, consumo de sustancias (frecuentemente como automedicación)."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": ["Entidad", "Diferencia clave"],
+"filas": [
+["TEA", "Patrón restringido-repetitivo y déficit social cualitativo ausentes en el TDAH puro (aunque coexisten con frecuencia)"],
+["Trastorno de ansiedad", "La inatención es secundaria a preocupación/rumiación, no un patrón atencional primario de base"],
+["Depresión", "Enlentecimiento cognitivo y anhedonia con correlato temporal al episodio afectivo, a diferencia del curso vital del TDAH"],
+["Trastorno bipolar", "Episodios de impulsividad/hiperactividad delimitados en el tiempo (hipomanía/manía), no un rasgo persistente desde la infancia"]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios (herramientas diagnósticas)",
+"bullets": [
+"Entrevista clínica con historia evolutiva desde la infancia (informante o registros escolares cuando sea posible).",
+"ASRS v1.1: cribado autoaplicado de la OMS, 18 ítems, primera línea en consultorio.",
+"Escala de Wender Utah: evalúa retrospectivamente síntomas de TDAH en la infancia, autoaplicada en adultos.",
+"CAARS (Conners' Adult ADHD Rating Scale): evaluación más detallada, con versión autoaplicada y de informante.",
+"Evaluación neuropsicológica: atención sostenida/dividida, funciones ejecutivas (planificación, inhibición, memoria de trabajo).",
+"Descartar causas orgánicas/secundarias de inatención: disfunción tiroidea, anemia, apnea del sueño, consumo de sustancias."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"Farmacológico de primera línea: estimulantes (metilfenidato, lisdexanfetamina) — eficacia robusta en adultos, similar a la población pediátrica.",
+"Alternativa no estimulante: atomoxetina; considerar ante contraindicación a estimulantes, antecedente de abuso de sustancias, o ansiedad comórbida marcada.",
+"Psicoeducación y TCC específica para TDAH adulto: estrategias de organización, manejo del tiempo, y reestructuración de la autocrítica frecuentemente asociada a años de diagnóstico tardío.",
+"Tratar activamente las comorbilidades (ansiedad, depresión), ya que pueden enmascarar o agravar el cuadro atencional."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"Control de eficacia y efectos adversos de la medicación estimulante (apetito, sueño, tensión arterial, frecuencia cardíaca) cada 1-3 meses al inicio, luego espaciar.",
+"Vigilar riesgo de mal uso de estimulantes, especialmente si hay antecedente de consumo de sustancias.",
+"Priorizar la reevaluación funcional (laboral/académica) por sobre la puramente sintomática."
+]
+}
+]
+},
+{
+"id": "m1t13",
+"numero": 13,
+"titulo": "Altas Capacidades Cognitivas (AACC) en adultos",
+"subtitulo": "No es deterioro, pero tampoco es \"nada\"",
+"secciones": [
+{
+"tipo": "sospecha_rapida",
+"titulo": "Cuadro clínico de sospecha rápida",
+"texto": "Adulto con sensación crónica de \"no encajar\", aburrimiento persistente en contextos poco estimulantes, frecuentemente mal diagnosticado antes con TDAH/ansiedad/trastorno del ánimo, o que consulta por sospecha de deterioro cognitivo con MMSE o MoCA en el techo pero queja subjetiva persistente. Relevante también la doble excepcionalidad: AACC coexistiendo con TEA o TDAH."
+},
+{
+"tipo": "clinica",
+"titulo": "Clínica",
+"bullets": [
+"Capacidad intelectual significativamente por encima de la media (clásicamente CI ≥130, aunque el corte exacto y si el CI es la única medida relevante son objeto de debate).",
+"Perfil cognitivo frecuentemente asincrónico: alta capacidad de razonamiento abstracto/verbal conviviendo con perfeccionismo, hipersensibilidad emocional y sobreexcitabilidad (intelectual, emocional, sensorial).",
+"Aburrimiento crónico en contextos poco estimulantes, que puede confundirse con inatención (TDAH) o desmotivación (depresión).",
+"Doble excepcionalidad: coexistencia frecuente con TEA o TDAH, donde la alta capacidad puede \"compensar\" y retrasar el diagnóstico de la condición de base, y viceversa.",
+"En el contexto de demencias: una reserva cognitiva alta puede enmascarar deterioro incipiente (techo en MMSE/MoCA); la caída relativa respecto del nivel basal es más relevante que el corte poblacional."
+]
+},
+{
+"tipo": "diagnostico_diferencial",
+"titulo": "Diagnóstico diferencial",
+"tabla": {
+"columnas": ["Entidad", "Diferencia clave"],
+"filas": [
+["TDAH", "La inatención en AACC suele ser específica a contextos poco desafiantes, no generalizada a todos los contextos como en el TDAH puro"],
+["TEA (sin doble excepcionalidad)", "Requiere evaluación específica de patrones restringidos-repetitivos y déficit social cualitativo, más allá de la introversión o los intereses intensos esperables en alta capacidad"],
+["Trastornos del ánimo", "El aburrimiento crónico y la frustración por falta de estímulo pueden simular apatía/anhedonia depresiva sin serlo"]
+]
+}
+},
+{
+"tipo": "estudios",
+"titulo": "Estudios (herramientas diagnósticas)",
+"bullets": [
+"Evaluación psicométrica formal con test de CI estandarizado: WAIS-IV es el estándar en adultos.",
+"Evaluación del perfil cognitivo completo, no solo el CI global: la dispersión entre índices (verbal, perceptivo, memoria de trabajo, velocidad de procesamiento) es tan relevante como el CI total, por el perfil asincrónico característico.",
+"Cuestionarios de sobreexcitabilidad (basados en la teoría de Dabrowski) como apoyo cualitativo, no diagnósticos por sí solos.",
+"Confirmar o descartar doble excepcionalidad con instrumentos específicos de TEA/TDAH cuando la clínica lo sugiera (ver temas correspondientes)."
+]
+},
+{
+"tipo": "tratamiento",
+"titulo": "Tratamiento",
+"bullets": [
+"No es una condición a \"tratar\" en sí misma; el abordaje es psicoeducativo: validar la experiencia y reencuadrar síntomas previamente mal diagnosticados.",
+"Psicoterapia orientada al perfeccionismo, la hipersensibilidad emocional y el sentimiento de no pertenencia, frecuente en quienes llegan a la consulta en la adultez sin diagnóstico previo.",
+"Ante doble excepcionalidad confirmada (TEA/TDAH comórbido), tratar esa condición específica según su propio algoritmo.",
+"En contexto de deterioro cognitivo: ajustar la interpretación de las pruebas de cribado al nivel basal premórbido estimado, no al corte poblacional estándar."
+]
+},
+{
+"tipo": "seguimiento",
+"titulo": "Seguimiento",
+"bullets": [
+"No requiere seguimiento médico específico salvo por las comorbilidades o condiciones asociadas que motivaron la consulta.",
+"En contexto de deterioro cognitivo con sospecha de alta reserva cognitiva: seguimiento neuropsicológico longitudinal con pruebas seriadas, más sensible a la caída relativa en el tiempo que un corte único."
+]
+}
+]
+}
+]
+},
+{
+"id": "modulo2",
+"titulo": "Movimientos Anormales",
+"subtitulo": "Farmacoterapia práctica de consultorio: Parkinson, temblor, distonías, corea, piernas inquietas, tics y mioclonías",
+"nota": "Ficha de referencia rápida — dosis, indicaciones y manejo de complicaciones. No incluye diagnóstico diferencial extenso: es la guía terapéutica.",
+"temas": [
+{
+"id": "m2t1",
+"numero": 1,
+"titulo": "Neuroimagen funcional: diagnóstico y diferencial (parkinsonismo)",
+"secciones": [
+{
+"tipo": "neuroimagen_funcional",
+"tabla": {
+"columnas": [
+"Estudio",
+"Qué evalúa",
+"Utilidad principal"
+],
+"filas": [
+[
+"SPECT-DaTSCAN (ioflupano) / TRODAT-1",
+"Integridad de terminales dopaminérgicas presinápticas estriatales",
+"Hipocaptación asimétrica (putamen > caudado) en Parkinson idiopático y parkinsonismos degenerativos. NORMAL en temblor esencial y en parkinsonismo inducido por fármacos — clave para el diferencial"
+],
+[
+"PET F-DOPA",
+"Síntesis y almacenamiento presináptico de dopamina",
+"Equivalente funcional al DaTSCAN; reducción progresiva y asimétrica putamen > caudado; mayor uso en investigación y seguimiento de progresión"
+],
+[
+"PET-FDG en parkinsonismos atípicos",
+"Metabolismo glucídico regional",
+"Patrones específicos: PSP (mesencéfalo, tálamo medial, frontal medial/cingulado anterior); AMS (putamen, cerebelo, tronco); degeneración corticobasal (asimétrico, parietal/frontal contralateral al lado más afectado)"
+]
+]
+},
+"nota": "Indicación práctica: diagnóstico diferencial en presentación atípica o de duda clínica, confirmación de respuesta dopaminérgica previa a bomba de apomorfina o Vyalev/Produodopa, y seguimiento de progresión en protocolos de investigación. No es de rutina en Parkinson clínicamente típico."
+}
+]
+},
+{
+"id": "m2t2",
+"numero": 2,
+"titulo": "Esquema general de fármacos antiparkinsonianos",
+"secciones": [
+{
+"tipo": "tratamiento",
+"tabla": {
+"columnas": [
+"Clase",
+"Fármacos",
+"Dosis habitual",
+"Comentario clave"
+],
+"filas": [
+[
+"Levodopa",
+"Levodopa/Carbidopa, Levodopa/Benserazida",
+"Inicio 100-300 mg/día divididos, titular según respuesta; dosis plena variable, varias tomas/día",
+"Más eficaz y mejor tolerada; iniciar pronto, no \"ahorrarla\" por miedo a discinesias"
+],
+[
+"Agonistas dopaminérgicos",
+"Pramipexol, Ropinirol, Rotigotina (parche)",
+"Pramipexol 0,125 mg c/8h → titular hasta 1,5-4,5 mg/día; Rotigotina 2 mg/24h → hasta 8 mg/24h",
+"Mayor riesgo de trastornos de control de impulsos, somnolencia y alucinaciones que levodopa; cautela en adultos mayores"
+],
+[
+"IMAO-B",
+"Selegilina, Rasagilina",
+"Selegilina 5 mg c/12h (mañana); Rasagilina 1 mg/día",
+"Uso temprano (monoterapia) o adyuvante; cuidado con ISRS/IRSN (riesgo de síndrome serotoninérgico, bajo pero real)"
+],
+[
+"ICOMT",
+"Entacapone, Opicapone",
+"Ver sección 3",
+"Solo adyuvantes de levodopa, nunca monoterapia"
+],
+[
+"Antiglutamatérgico (NMDA)",
+"Amantadina",
+"Ver sección 4",
+"Útil específicamente para discinesias"
+],
+[
+"Anticolinérgicos",
+"Trihexifenidilo, Biperideno",
+"Dosis bajas, uso acotado",
+"Reservar para temblor predominante en jóvenes; evitar en adultos mayores (riesgo cognitivo/confusional)"
+]
+]
+}
+}
+]
+},
+{
+"id": "m2t3",
+"numero": 3,
+"titulo": "Entacapone (ICOMT)",
+"secciones": [
+{
+"tipo": "tratamiento",
+"bullets": [
+"Dosis: 200 mg con cada toma de levodopa, hasta 8-10 dosis/día (máximo 2000 mg/día).",
+"Mecanismo: inhibe la COMT periférica → prolonga la vida media de la levodopa → menos fluctuaciones \"wearing-off\".",
+"Efectos adversos: diarrea (puede aparecer semanas después de iniciado), orina de color naranja/rojizo (inocuo, avisar al paciente), aumento de discinesias por mayor biodisponibilidad de levodopa (puede requerir bajar dosis de levodopa).",
+"Opicapone: alternativa de toma única nocturna (25-50 mg), sin el inconveniente de la dosificación múltiple."
+]
+}
+]
+},
+{
+"id": "m2t4",
+"numero": 4,
+"titulo": "Amantadina",
+"secciones": [
+{
+"tipo": "tratamiento",
+"bullets": [
+"Dosis: inicio 100 mg/día → titular a 100 mg c/12h → máximo habitual 300-400 mg/día (formulación de liberación prolongada nocturna disponible en algunos mercados, no Argentina de rutina).",
+"Indicación principal: discinesias inducidas por levodopa (mejor evidencia para este fin); el AIMS permite cuantificarlas y seguir la respuesta al tratamiento. También efecto leve sobre síntomas motores per se.",
+"Ajuste renal: eliminación renal casi exclusiva → reducir dosis con ClCr <50 ml/min; evitar o usar con extrema precaución si ClCr <15 ml/min.",
+"Efectos adversos a vigilar en adultos mayores: confusión, alucinaciones, livedo reticularis, edema en miembros inferiores, retención urinaria."
+]
+}
+]
+},
+{
+"id": "m2t5",
+"numero": 5,
+"titulo": "Apomorfina",
+"secciones": [
+{
+"tipo": "subtema",
+"titulo": "5.1 Prueba de apomorfina (challenge test)",
+"bullets": [
+"Objetivo: confirmar respuesta dopaminérgica franca (apoya diagnóstico de EP idiopática vs. parkinsonismo atípico) y/o testear tolerancia antes de iniciar bomba.",
+"Premedicación: domperidona 20 mg c/8h durante 2-3 días previos (reduce náuseas e hipotensión; no disponible/legal en todos los países — verificar normativa local).",
+"Protocolo: paciente en \"off\" (suspender levodopa la noche previa), UPDRS motor basal, dosis subcutánea ascendente de prueba (típicamente desde 1-2 mg, incrementos de 1-2 mg cada 30-40 min) hasta lograr respuesta motora franca o aparición de efectos adversos.",
+"Monitoreo: tensión arterial (riesgo de hipotensión ortostática), ECG basal (prolongación de QT), evaluación motora seriada (UPDRS) post cada dosis.",
+"Respuesta positiva: mejoría ≥20-30% del UPDRS motor → orienta a buena respuesta dopaminérgica esperable también con terapia continua.",
+"Complementar la estadificación global con Hoehn y Yahr y la funcional con Schwab & England, especialmente al decidir el paso a terapias de segunda línea (bomba, DBS)."
+]
+},
+{
+"tipo": "subtema",
+"titulo": "5.2 Bomba de infusión continua subcutánea de apomorfina",
+"bullets": [
+"Indicación: fluctuaciones motoras severas (\"off\" impredecibles, discinesias incapacitantes) refractarias a optimización oral, en paciente que no es candidato o no desea cirugía (DBS) o yeyunostomía con levodopa-carbidopa en gel.",
+"Dosis de infusión continua diurna: habitualmente 1-8 mg/h (rango amplio, individualizar); se suele desconectar durante la noche salvo síntomas nocturnos relevantes.",
+"Rescates en bolo subcutáneo (pluma): 2-6 mg por episodio de \"off\" agudo, inicio de acción en 5-15 minutos.",
+"Premedicación obligatoria con domperidona al inicio del tratamiento (igual criterio que en la prueba).",
+"Vigilancia: nódulos/induración cutánea en sitios de punción (rotar sitios), psicosis o alucinaciones, hipotensión, prolongación de QT, anemia hemolítica (rara, descrita con uso prolongado)."
+]
+},
+{
+"tipo": "subtema",
+"titulo": "5.3 Alternativas más nuevas a la bomba de apomorfina",
+"bullets": [
+"Foslevodopa/Foscarbidopa (Vyalev en EE.UU., Produodopa en Europa/otros mercados): bomba de infusión subcutánea continua de levodopa/carbidopa, 24 h/día, no quirúrgica. Aprobada en EE.UU. (2024), Unión Europea, Canadá, Australia y otros países. Indicación: fluctuaciones motoras avanzadas, alternativa a la apomorfina o a la levodopa-carbidopa intestinal en gel para quienes no son candidatos a cirugía.",
+"No aprobada por ANMAT en Argentina a la fecha de esta revisión — verificar estado regulatorio actualizado.",
+"Comparte con la apomorfina: contraindicada con IMAO no selectivos (igual precaución que con levodopa oral); el perfil de eventos adversos incluye reacciones en el sitio de infusión, alucinaciones y discinesias.",
+"Tavapadon: agonista oral D1/D5, en revisión por la FDA (decisión esperada durante 2026); aún no aprobado por ninguna agencia regulatoria. Referencia del pipeline, no opción terapéutica disponible todavía."
+]
+}
+]
+},
+{
+"id": "m2t6",
+"numero": 6,
+"titulo": "Neuroprotectores",
+"secciones": [
+{
+"tipo": "tratamiento",
+"bullets": [
+"No existe a la fecha ningún fármaco con efecto neuroprotector/modificador de enfermedad confirmado de forma robusta y consistente en EP.",
+"Rasagilina y Safinamide (IMAO-B): señales de posible efecto neuroprotector en estudios preclínicos y de diseño \"delayed-start\", pero sin confirmación definitiva en ensayos clínicos a largo plazo — se usan por su efecto sintomático, no prescribir solo \"para proteger\".",
+"Coenzima Q10, vitamina E, otros antioxidantes: evidencia negativa o no concluyente; no recomendados con fin neuroprotector.",
+"La intervención con mayor evidencia de impacto en la progresión funcional es el ejercicio físico aeróbico regular y de resistencia — recomendarlo activamente, no como \"complemento menor\"."
+]
+}
+]
+},
+{
+"id": "m2t7",
+"numero": 7,
+"titulo": "Antidepresivos recomendados en Parkinson",
+"secciones": [
+{
+"tipo": "tratamiento",
+"tabla": {
+"columnas": [
+"Opción",
+"Comentario"
+],
+"filas": [
+[
+"ISRS (Sertralina, Escitalopram)",
+"Primera línea habitual; buen perfil de tolerancia en adultos mayores"
+],
+[
+"IRSN (Venlafaxina, Duloxetina)",
+"Alternativa útil si coexiste dolor crónico o predomina la apatía/falta de energía"
+],
+[
+"Bupropión",
+"Opción a considerar si predomina apatía marcada (efecto dopaminérgico/noradrenérgico); evitar si hay psicosis o antecedente de discinesias severas"
+],
+[
+"Tricíclicos",
+"Uso limitado por carga anticolinérgica (riesgo cognitivo, retención urinaria, constipación); evitar en adultos mayores frágiles"
+]
+]
+},
+"alertas": [
+"Selegilina/Rasagilina (IMAO-B) + ISRS/IRSN: riesgo descrito de síndrome serotoninérgico. El riesgo real con dosis selectivas de IMAO-B es bajo, pero igual: usar dosis bajas, advertir síntomas de alarma (agitación, hipertermia, mioclonías, diaforesis) y evitar la combinación con tricíclicos o IMAO no selectivos."
+]
+}
+]
+},
+{
+"id": "m2t8",
+"numero": 8,
+"titulo": "Trastornos de conducta y alucinaciones intra-tratamiento",
+"secciones": [
+{
+"tipo": "subtema",
+"titulo": "8.1 Primer paso, siempre",
+"bullets": [
+"Descartar causa intercurrente (infección urinaria, deshidratación, fármacos nuevos, delirium) antes de atribuir todo al tratamiento dopaminérgico.",
+"Si hay relación temporal con un fármaco antiparkinsoniano: ajustar/reducir en este orden (de menor a mayor impacto motor esperado al retirar), manteniendo la levodopa como último recurso a reducir:"
+],
+"orden_reduccion": [
+"1. Anticolinérgicos",
+"2. Amantadina",
+"3. IMAO-B",
+"4. Agonistas dopaminérgicos",
+"5. ICOMT (entacapone/opicapone)",
+"6. Levodopa (reducir solo si lo anterior no fue suficiente y el cuadro es severo)"
+]
+},
+{
+"tipo": "subtema",
+"titulo": "8.2 Si persiste tras el ajuste: antipsicóticos seguros",
+"tabla": {
+"columnas": [
+"Fármaco",
+"Dosis",
+"Comentario"
+],
+"filas": [
+[
+"Quetiapina",
+"12,5-25 mg/noche → titular según respuesta",
+"Primera opción práctica por disponibilidad; bajo perfil de empeoramiento motor a dosis bajas"
+],
+[
+"Clozapina",
+"6,25-12,5 mg/noche → titular",
+"Mayor evidencia de eficacia y seguridad motora; requiere control hematológico periódico (riesgo de agranulocitosis)"
+],
+[
+"Pimavanserina",
+"34 mg/día",
+"Antagonista inverso 5-HT2A selectivo, no bloquea dopamina (no empeora motor); disponibilidad limitada/variable según país"
+]
+]
+},
+"alertas": [
+"Evitar antipsicóticos típicos y la mayoría de los atípicos clásicos (haloperidol, risperidona, olanzapina): bloquean receptores dopaminérgicos y empeoran significativamente el parkinsonismo."
+]
+},
+{
+"tipo": "subtema",
+"titulo": "8.3 Trastornos del control de impulsos",
+"bullets": [
+"Juego patológico, hipersexualidad, compras compulsivas, atracones: asociados principalmente a agonistas dopaminérgicos (efecto de clase, dosis-dependiente).",
+"Manejo de primera línea: reducir o discontinuar el agonista dopaminérgico (gradualmente, para evitar síndrome de discontinuación: ansiedad, disforia, craving).",
+"Si no es posible discontinuar por necesidad motora: considerar rotar a otro agonista, o compensar con levodopa, y derivar a salud mental si hay impacto funcional/social significativo."
+]
+}
+]
+},
+{
+"id": "m2t9",
+"numero": 9,
+"titulo": "Temblor Esencial",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clínica clave",
+"texto": "Temblor postural y/o de acción (no de reposo), bilateral, predominio en miembros superiores, puede afectar voz y cabeza; mejora característicamente con alcohol; frecuente antecedente familiar."
+},
+{
+"tipo": "tratamiento",
+"tabla": {
+"columnas": [
+"Línea",
+"Fármaco",
+"Dosis"
+],
+"filas": [
+[
+"1ª línea",
+"Propranolol",
+"40 mg c/12h → titular hasta 160-320 mg/día (o forma de liberación prolongada)"
+],
+[
+"1ª línea",
+"Primidona",
+"Inicio 25 mg/noche (evitar efecto sedante inicial) → titular lento hasta 250-750 mg/día"
+],
+[
+"2ª línea",
+"Topiramato",
+"25 mg/noche → titular hasta 200-400 mg/día según tolerancia"
+],
+[
+"2ª línea",
+"Gabapentina",
+"300 mg c/8h → titular según respuesta"
+],
+[
+"Focal (cabeza/voz)",
+"Toxina botulínica",
+"Aplicación focal, repetir cada 3-4 meses"
+],
+[
+"Refractario severo",
+"DBS de núcleo ventral intermedio del tálamo / HIFU",
+"Derivar a centro de cirugía funcional"
+]
+]
+},
+"bullets": [
+"Propranolol: evitar o usar con cautela en asma, bradicardia, bloqueo AV, diabetes con hipoglucemias frecuentes (enmascara síntomas).",
+"Primidona: titular muy lento por sedación inicial marcada, sobre todo en adultos mayores.",
+"Fahn-Tolosa-Marin para documentar severidad basal y respuesta objetiva al tratamiento."
+]
+},
+{
+"tipo": "actualizacion_guias",
+"titulo": "Actualización de evidencia (MDS-EBM 2026)",
+"texto": "Una reevaluación con criterios GRADE más estrictos bajó la certeza de evidencia para propranolol y primidona respecto de revisiones previas, sin que haya surgido una alternativa farmacológica superior — siguen siendo de elección, pero con una conversación más honesta sobre expectativas de respuesta con el paciente. El foco de la evidencia más sólida nueva está del lado quirúrgico: HIFU (ultrasonido focalizado de alta intensidad) ganó respaldo como alternativa no invasiva a la DBS en casos refractarios."
+}
+]
+},
+{
+"id": "m2t10",
+"numero": 10,
+"titulo": "Distonías",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clasificación práctica",
+"texto": "Focal (cervical, blefaroespasmo, laríngea, de miembro/ocupacional como del escribano/músico), segmentaria, generalizada."
+},
+{
+"tipo": "tratamiento",
+"tabla": {
+"columnas": [
+"Tipo / situación",
+"Tratamiento de elección",
+"Detalle"
+],
+"filas": [
+[
+"Distonía focal (cervical, blefaroespasmo, laríngea)",
+"Toxina botulínica",
+"1ª línea indiscutida; reinyección cada 3-4 meses; dosis y sitios según músculo afectado"
+],
+[
+"Distonía generalizada (especialmente de inicio en infancia/DYT1)",
+"Anticolinérgicos en dosis altas (Trihexifenidilo)",
+"Titular muy gradual hasta dosis altas (puede requerir >20 mg/día); mejor tolerado en niños/jóvenes que en adultos"
+],
+[
+"Distonía generalizada refractaria",
+"Baclofeno (oral o intratecal)",
+"Útil especialmente si hay espasticidad asociada"
+],
+[
+"Distonía generalizada severa refractaria a fármacos",
+"DBS de globo pálido interno",
+"Especialmente eficaz en distonías genéticas primarias (DYT1)"
+],
+[
+"Distonía aguda por neurolépticos",
+"Biperideno IM/EV o anticolinérgico oral",
+"Urgencia: resolución en minutos con biperideno parenteral"
+]
+]
+},
+"bullets": [
+"Siempre investigar causa secundaria (Wilson, fármacos, lesión estructural) antes de catalogar como distonía primaria, especialmente en inicio atípico."
+]
+},
+{
+"tipo": "neuroimagen_funcional",
+"texto": "SPECT-DaTSCAN/TRODAT-1: habitualmente normal en distonías primarias, a diferencia de los parkinsonismos degenerativos — dato útil para el diferencial cuando coexiste duda clínica con un componente parkinsoniano."
+}
+]
+},
+{
+"id": "m2t11",
+"numero": 11,
+"titulo": "Corea / Enfermedad de Huntington",
+"secciones": [
+{
+"tipo": "tratamiento",
+"intro": "Tratamiento sintomático únicamente; no existe terapia modificadora de enfermedad aprobada.",
+"tabla": {
+"columnas": [
+"Síntoma / fármaco",
+"Dosis",
+"Comentario"
+],
+"filas": [
+[
+"Tetrabenazina",
+"12,5 mg/día → titular lento hasta dosis de mantenimiento (habitualmente 25-75 mg/día divididos)",
+"Depleta dopamina presináptica; riesgo de depresión/ideación suicida — vigilar activamente, contraindicada con depresión no controlada"
+],
+[
+"Deutetrabenazina",
+"6 mg/día → titular según respuesta",
+"Perfil similar a tetrabenazina con menor pico plasmático (menos sedación); no disponible en todos los mercados"
+],
+[
+"Antipsicóticos atípicos (Olanzapina, Risperidona)",
+"Dosis bajas, titular",
+"Alternativa si coexiste psicosis o conducta agresiva; también reducen corea por bloqueo dopaminérgico"
+],
+[
+"Depresión asociada",
+"ISRS de primera línea",
+"Muy frecuente en Huntington; alto riesgo suicida — cribado activo y sistemático en cada control"
+]
+]
+},
+"bullets": [
+"Abordaje interdisciplinario obligatorio: neurología, salud mental, genética (consejo genético familiar), fonoaudiología y nutrición (disfagia progresiva).",
+"UHDRS para seguimiento longitudinal estandarizado de los 4 dominios (motor, cognitivo, conductual, funcional)."
+]
+},
+{
+"tipo": "actualizacion_guias",
+"titulo": "Confirmación de guía vigente (MDS Evidence-Based Review 2022)",
+"texto": "El manejo farmacológico de la corea sigue siendo predominantemente off-label más allá de tetrabenazina/deutetrabenazina, sin nuevas terapias modificadoras de enfermedad aprobadas. La guía de fisioterapia de la AAN (2020) respalda fuertemente el ejercicio estructurado y la kinesiología para enlentecer el deterioro funcional motor — recomendarlo activamente desde estadios tempranos, no solo cuando ya hay compromiso de la marcha."
+},
+{
+"tipo": "neuroimagen_funcional",
+"texto": "PET-FDG: hipometabolismo marcado en núcleo caudado y putamen, que con frecuencia precede a la atrofia estructural visible en RM y correlaciona con la progresión clínica — útil en presentaciones dudosas o de inicio atípico."
+}
+]
+},
+{
+"id": "m2t12",
+"numero": 12,
+"titulo": "Síndrome de Piernas Inquietas (SPI)",
+"secciones": [
+{
+"tipo": "actualizacion_guias",
+"titulo": "Actualización de guía (AASM 2024)",
+"texto": "Cambio de paradigma respecto de versiones previas — los agonistas dopaminérgicos YA NO se recomiendan como tratamiento de elección, ni siquiera como segunda línea de uso prolongado, por el riesgo acumulado de augmentation (7-10% por año de tratamiento, hasta 35-50% a los 5 años)."
+},
+{
+"tipo": "estudios",
+"titulo": "Primer paso siempre",
+"texto": "Dosar ferritina sérica y saturación de transferrina. La guía 2024 recomienda tratar el déficit de hierro con un umbral más exigente: objetivo de ferritina por encima de 100 ng/ml (no solo >75), independientemente de que exista o no anemia. El IRLS permite cuantificar severidad basal y respuesta al tratamiento."
+},
+{
+"tipo": "tratamiento",
+"tabla": {
+"columnas": [
+"Línea",
+"Fármaco",
+"Dosis"
+],
+"filas": [
+[
+"1ª línea",
+"Gabapentina / Pregabalina / Gabapentina enacarbil",
+"Gabapentina 100-300 mg en la tarde-noche, titular; Pregabalina 50-150 mg/noche"
+],
+[
+"1ª línea (déficit de hierro)",
+"Hierro IV (preferido sobre el oral en la guía 2024 por mayor eficacia y rapidez) u oral según severidad",
+"Hierro IV si ferritina <100 ng/ml o falta de respuesta/intolerancia a hierro oral"
+],
+[
+"Ya NO recomendados como tratamiento de rutina",
+"Agonistas dopaminérgicos (Pramipexol, Rotigotina)",
+"Reservar solo para casos excepcionales y por el menor tiempo posible, con plan de discontinuación si aparece augmentation"
+],
+[
+"Casos refractarios severos, bajo supervisión especializada",
+"Opioides de baja potencia (Oxicodona/naloxona)",
+"Uso restringido"
+]
+]
+},
+"alertas": [
+"Si el paciente ya está en tratamiento crónico con agonista dopaminérgico: no suspender abruptamente (riesgo de síndrome de discontinuación) y reevaluar activamente signos de augmentation (síntomas más tempranos en el día, más intensos, o que se extienden a otras partes del cuerpo) para planificar la transición a alfa2-delta ligandos."
+]
+}
+]
+},
+{
+"id": "m2t13",
+"numero": 13,
+"titulo": "Tics y Síndrome de Tourette",
+"secciones": [
+{
+"tipo": "tratamiento",
+"intro": "1ª línea siempre no farmacológica: terapia de reversión de hábito / terapia conductual integral para tics (CBIT).",
+"tabla": {
+"columnas": [
+"Línea",
+"Fármaco",
+"Dosis"
+],
+"filas": [
+[
+"1ª línea farmacológica",
+"Clonidina",
+"0,05 mg/noche → titular hasta 0,1-0,3 mg/día divididos"
+],
+[
+"1ª línea farmacológica",
+"Guanfacina",
+"0,5-1 mg/noche → titular según respuesta"
+],
+[
+"Tics moderados-severos / con comorbilidad",
+"Aripiprazol",
+"2 mg/día → titular hasta 5-10 mg/día"
+],
+[
+"Tics severos refractarios",
+"Risperidona",
+"0,5 mg/noche → titular con cautela (riesgo metabólico/extrapiramidal)"
+],
+[
+"Tic motor focal muy discapacitante",
+"Toxina botulínica",
+"Aplicación focal en el músculo involucrado"
+]
+]
+},
+"bullets": [
+"Investigar y tratar activamente comorbilidades frecuentes: TDAH, trastorno obsesivo-compulsivo, ansiedad — con frecuencia generan más impacto funcional que el tic en sí.",
+"YGTSS para cuantificar severidad y seguir respuesta al tratamiento."
+]
+},
+{
+"tipo": "actualizacion_guias",
+"titulo": "Confirmación de guías vigentes (AAN 2019, reafirmada; guía europea ESSTS v2.0)",
+"texto": "El esquema de arriba sigue siendo el de referencia. Aripiprazol es señalado como fármaco de primera elección tanto en niños como en adultos en la encuesta de preferencia de la ESSTS. Para casos refractarios a tratamiento conductual y farmacológico, la DBS es una opción válida, sin un blanco quirúrgico único consensuado (se usan núcleo centromediano talámico, globo pálido interno/externo o núcleo subtalámico según el centro)."
+}
+]
+},
+{
+"id": "m2t14",
+"numero": 14,
+"titulo": "Mioclonías",
+"secciones": [
+{
+"tipo": "clinica",
+"titulo": "Clasificación práctica por origen",
+"texto": "Cortical (la más frecuente, estímulo-sensible), subcortical, espinal, periférica — orienta el tratamiento."
+},
+{
+"tipo": "tratamiento",
+"tabla": {
+"columnas": [
+"Fármaco",
+"Dosis",
+"Comentario"
+],
+"filas": [
+[
+"Levetiracetam",
+"250-500 mg c/12h → titular hasta 3000 mg/día",
+"1ª línea práctica amplia, especialmente en mioclono cortical; buen perfil de tolerancia"
+],
+[
+"Ácido valproico",
+"Inicio 250-500 mg/día → titular según respuesta y niveles",
+"Eficaz en mioclono cortical y generalizado; evitar en mujeres en edad fértil sin método anticonceptivo seguro"
+],
+[
+"Clonazepam",
+"0,25-0,5 mg/noche → titular con cautela",
+"Útil como adyuvante; sedación y riesgo de tolerancia/dependencia limitan uso prolongado en monoterapia"
+],
+[
+"Piracetam",
+"Dosis altas (varios gramos/día, formulación según disponibilidad)",
+"Específicamente útil en mioclono cortical de acción; disponibilidad variable según país"
+]
+]
+},
+"bullets": [
+"Siempre buscar y tratar la causa subyacente cuando sea identificable (metabólica, anóxica, fármacos, encefalopatía) — el tratamiento sintomático no sustituye la corrección etiológica."
+]
+}
+]
+}
+]
+}
+],
+"resumen_novedades": {
+"titulo": "Lo nuevo en diagnóstico y tratamiento",
+"subtitulo": "Resumen de actualizaciones de guías — Módulos 1 y 2",
+"metodologia": "Hecho mediante búsqueda dirigida sobre las guías de referencia de cada tema, no mediante una revisión sistemática formal (PRISMA). Se señala con ⚠ cuando hubo un cambio de conducta clínica real, y con ✓ cuando la guía vigente simplemente confirmó lo ya descrito en el Manual.",
+"modulo1": [
+{
+"tema": "Enfermedad de Alzheimer",
+"estado": "cambio",
+"puntos": [
+"Criterios NIA-AA 2024: modelo de diagnóstico puramente biológico (más allá de la clínica), con estadificación numérica 1-6, y biomarcadores en sangre (ej. p-tau217) ya incorporados al panel \"Core\" — anticipa diagnóstico biológico accesible sin PET/LCR en el corto-mediano plazo.",
+"Anticuerpos anti-amiloide (lecanemab, donanemab): aprobados FDA (2023-2024) y EMA (2025) para deterioro cognitivo leve/demencia leve con biomarcador positivo. No aprobados por ANMAT en Argentina a la fecha de esta revisión."
+]
+},
+{
+"tema": "Demencia Vascular y Demencia Mixta",
+"estado": "confirmado",
+"puntos": [
+"Sin cambios de guía relevantes detectados; se confirma el enfoque de control vascular agresivo como pilar y el uso de anticolinesterásicos/memantina por extrapolación de la evidencia de Alzheimer."
+]
+},
+{
+"tema": "Demencia por Cuerpos de Lewy",
+"estado": "confirmado",
+"puntos": [
+"Los criterios vigentes siguen siendo el 4° consenso del DLB Consortium (2017); no hay una 5ª revisión publicada. Se sumó al Manual la gammagrafía con 123I-MIBG como biomarcador indicativo adicional (denervación simpática cardíaca), que ya formaba parte de ese consenso pero no estaba incluida originalmente."
+]
+},
+{
+"tema": "Demencia Frontotemporal",
+"estado": "confirmado",
+"puntos": [
+"Sin cambios de guía relevantes detectados en esta revisión; los criterios de variante conductual y afasias progresivas primarias se mantienen vigentes."
+]
+},
+{
+"tema": "Deterioro Cognitivo Leve (DCL/MCI)",
+"estado": "confirmado",
+"puntos": [
+"La guía AAN de 2018 sobre DCL sigue siendo la referencia vigente; no se identificó una actualización formal posterior. Se mantiene la recomendación de no usar anticolinesterásicos de rutina en esta etapa."
+]
+},
+{
+"tema": "Pseudodeterioro Cognitivo (Depresión e Hiperhomocisteinemia) y Depresión",
+"estado": "confirmado",
+"puntos": [
+"No se identificaron cambios de guía recientes específicos para el algoritmo homocisteína/AMM ni para el enfoque de pseudodemencia depresiva; el contenido del Manual refleja el consenso vigente."
+]
+}
+],
+"modulo2": [
+{
+"tema": "Síndrome de Piernas Inquietas",
+"estado": "cambio",
+"destacado": "el cambio más importante de esta revisión",
+"puntos": [
+"Guía AASM 2024 (actualiza la de 2012): los agonistas dopaminérgicos DEJAN de recomendarse como tratamiento de rutina, ni siquiera como 2ª línea de uso prolongado, por el riesgo acumulado de augmentation (7-10%/año, hasta 35-50% a 5 años).",
+"Alfa2-delta ligandos (gabapentina/pregabalina) y hierro (con preferencia creciente por la vía IV) pasan a ser de elección. El objetivo de ferritina sube de >75 a >100 ng/ml."
+]
+},
+{
+"tema": "Parkinson — novedades de fármacos y dispositivos",
+"estado": "cambio",
+"nota": "no son cambios de guía, son aprobaciones nuevas",
+"puntos": [
+"Foslevodopa/Foscarbidopa (Vyalev/Produodopa): bomba subcutánea continua de levodopa, aprobada en EE.UU. (2024), UE, Canadá y Australia — alternativa no quirúrgica a la apomorfina. No aprobada por ANMAT a la fecha.",
+"Tavapadon (agonista oral D1/D5): en revisión por la FDA, decisión esperada durante 2026 — todavía no aprobado por ninguna agencia, mencionado solo como referencia de pipeline."
+]
+},
+{
+"tema": "Temblor Esencial",
+"estado": "confirmado",
+"puntos": [
+"La guía AAN de referencia sigue siendo la de 2011 (reafirmada en julio de 2025 sin cambios de fondo). Una revisión de evidencia MDS-EBM 2026 reevaluó propranolol y primidona con criterios GRADE más estrictos y bajó la certeza de la evidencia, sin proponer una alternativa farmacológica superior. El desarrollo más activo está en el plano quirúrgico (HIFU como alternativa no invasiva a la DBS)."
+]
+},
+{
+"tema": "Distonías",
+"estado": "confirmado",
+"puntos": [
+"No se identificaron cambios de guía recientes; la toxina botulínica se mantiene como 1ª línea indiscutida para formas focales, y el DBS de globo pálido interno para formas generalizadas refractarias, especialmente DYT1."
+]
+},
+{
+"tema": "Corea / Enfermedad de Huntington",
+"estado": "confirmado",
+"puntos": [
+"La revisión de evidencia MDS de 2022 confirma que el manejo farmacológico de la corea sigue siendo predominantemente off-label más allá de tetrabenazina/deutetrabenazina, sin nuevas terapias modificadoras de enfermedad aprobadas desde entonces.",
+"La guía de fisioterapia de la AAN (2020) respalda con fuerza el ejercicio estructurado desde etapas tempranas — se agregó esta recomendación de forma explícita al Manual."
+]
+},
+{
+"tema": "Tics y Síndrome de Tourette",
+"estado": "confirmado",
+"puntos": [
+"La guía AAN de 2019 sigue vigente sin actualización formal posterior. La guía europea ESSTS v2.0 coincide en el esquema terapéutico y señala a aripiprazol como fármaco de primera elección tanto en niños como en adultos. Sin blanco quirúrgico único consensuado para DBS en casos refractarios."
+]
+},
+{
+"tema": "Mioclonías",
+"estado": "confirmado",
+"puntos": [
+"No se identificaron guías de sociedad específicas ni cambios recientes relevantes; levetiracetam se mantiene como primera línea práctica más amplia."
+]
+}
+]
+}
+};
+
+const SECTION_ICONS = {
+  sospecha_rapida: {icon:'⚡',color:'var(--amber)',bg:'var(--amber-bg)',bd:'var(--amber-bd)',label:'Sospecha rápida'},
+  clinica: {icon:'🩺',color:'var(--teal)',bg:'var(--teal-bg)',bd:'var(--teal-bd)',label:'Clínica'},
+  diagnostico: {icon:'📋',color:'var(--teal)',bg:'var(--teal-bg)',bd:'var(--teal-bd)',label:'Diagnóstico'},
+  diagnostico_diferencial: {icon:'⚖️',color:'var(--slate)',bg:'var(--slate-bg)',bd:'var(--slate-bd)',label:'Diagnóstico diferencial'},
+  estudios: {icon:'🧪',color:'var(--teal)',bg:'var(--teal-bg)',bd:'var(--teal-bd)',label:'Estudios'},
+  neuroimagen_funcional: {icon:'🔬',color:'var(--teal)',bg:'var(--teal-bg)',bd:'var(--teal-bd)',label:'Neuroimagen funcional'},
+  tratamiento: {icon:'💊',color:'var(--teal)',bg:'var(--teal-bg)',bd:'var(--teal-bd)',label:'Tratamiento'},
+  seguimiento: {icon:'📅',color:'var(--slate)',bg:'var(--slate-bg)',bd:'var(--slate-bd)',label:'Seguimiento'},
+  actualizacion_guias: {icon:'🔄',color:'var(--amber)',bg:'var(--amber-bg)',bd:'var(--amber-bd)',label:'Actualización de guías'},
+};
+
+let currentView = 'home';
+let currentModule = null;
+let currentTema = null;
+let searchOpen = false;
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function renderHome() {
+  currentView = 'home';
+  document.getElementById('btn-home').classList.add('on');
+  const mods = MANUAL_DATA.modulos;
+  let h = '<div class="mod-grid">';
+  mods.forEach((m,i) => {
+    h += `<div class="mod-card" onclick="goModule('${m.id}')">
+      <div class="mod-num">Módulo ${i+1}</div>
+      <div class="mod-titulo">${esc(m.titulo)}</div>
+      <div class="mod-count">${m.temas.length} tema${m.temas!==1?'s':''}</div>
+    </div>`;
+  });
+  h += '</div>';
+  setMain(h);
+}
+
+function goModule(modId) {
+  currentView = 'module';
+  currentModule = MANUAL_DATA.modulos.find(m=>m.id===modId);
+  if(!currentModule) return;
+  let h = `<button class="back-btn" onclick="renderHome()">← Volver</button>`;
+  h += `<div style="font-family:'Source Serif 4',Georgia,serif;font-size:18px;font-weight:600;margin-bottom:14px;color:var(--ink)">${esc(currentModule.titulo)}</div>`;
+  h += '<div class="tema-list">';
+  currentModule.temas.forEach(t => {
+    h += `<div class="tema-item" onclick="goTema('${currentModule.id}','${t.id}')">
+      <div class="tema-num">${String(t.numero).padStart(2,'0')}</div>
+      <div class="tema-info">
+        <div class="tema-titulo">${esc(t.titulo)}</div>
+        ${t.subtitulo?`<div class="tema-sub">${esc(t.subtitulo)}</div>`:''}
+      </div>
+    </div>`;
+  });
+  h += '</div>';
+  setMain(h);
+}
+
+function goTema(modId, temaId) {
+  currentView = 'tema';
+  const mod = MANUAL_DATA.modulos.find(m=>m.id===modId);
+  if(!mod) return;
+  const tema = mod.temas.find(t=>t.id===temaId);
+  if(!tema) return;
+  currentModule = mod;
+  currentTema = tema;
+
+  let h = `<button class="back-btn" onclick="goModule('${modId}')">← ${esc(mod.titulo)}</button>`;
+  h += `<div class="tema-header">
+    <div class="tema-numero">Tema ${tema.numero}</div>
+    <div class="tema-h1">${esc(tema.titulo)}</div>
+    ${tema.subtitulo?`<div class="tema-h1-sub">${esc(tema.subtitulo)}</div>`:''}
+  </div>`;
+
+  if(tema.secciones) {
+    tema.secciones.forEach((sec,si) => {
+      h += renderSeccion(sec, `${temaId}_${si}`);
+    });
+  }
+  setMain(h);
+  window.scrollTo(0,0);
+}
+
+function renderSeccion(sec, uid) {
+  const meta = SECTION_ICONS[sec.tipo] || {icon:'📄',color:'var(--slate)',bg:'var(--slate-bg)',bd:'var(--slate-bd)',label:sec.tipo};
+  let inner = '';
+
+  if(sec.intro) inner += `<div class="sec-intro">${esc(sec.intro)}</div>`;
+  if(sec.bullets) inner += renderBullets(sec.bullets);
+  if(sec.tabla) inner += renderTabla(sec.tabla);
+  if(sec.nota_clinica) inner += `<div class="nota-box"><div class="nota-box-label">Nota clínica</div>${esc(sec.nota_clinica)}</div>`;
+  if(sec.nota) inner += `<div class="nota-box"><div class="nota-box-label">Nota</div>${esc(sec.nota)}</div>`;
+  if(sec.texto) inner += `<div class="sec-intro">${esc(sec.texto)}</div>`;
+
+  // Neuroimagen funcional subsección
+  if(sec.neuroimagen_funcional) {
+    const nf = sec.neuroimagen_funcional;
+    let nfh = '';
+    if(nf.indicacion) nfh += `<div class="sec-intro">${esc(nf.indicacion)}</div>`;
+    if(nf.tabla) nfh += renderTabla(nf.tabla);
+    inner += renderSubSeccion('Neuroimagen funcional', nfh, uid+'_nf');
+  }
+
+  // Actualización guías
+  if(sec.actualizacion_guias) {
+    const ag = sec.actualizacion_guias;
+    let agh = '<div class="guia-label">Actualización de guías</div>';
+    if(Array.isArray(ag)) {
+      ag.forEach(item => {
+        agh += `<div class="guia-item"><span class="guia-tag">${esc(item.tipo||'GUÍA')}</span><span>${esc(item.texto||item.descripcion||JSON.stringify(item))}</span></div>`;
+      });
+    } else if(typeof ag === 'object') {
+      Object.entries(ag).forEach(([k,v]) => {
+        if(typeof v === 'string') agh += `<div class="guia-item"><span class="guia-tag">${esc(k)}</span><span>${esc(v)}</span></div>`;
+        else if(Array.isArray(v)) v.forEach(item => {
+          agh += `<div class="guia-item"><span class="guia-tag">${esc(k)}</span><span>${esc(typeof item==='string'?item:JSON.stringify(item))}</span></div>`;
+        });
+      });
+    }
+    inner += `<div class="guia-block">${agh}</div>`;
+  }
+
+  // Subsecciones
+  if(sec.subsecciones) {
+    sec.subsecciones.forEach((sub,si) => {
+      let sh = '';
+      if(sub.bullets) sh += renderBullets(sub.bullets);
+      if(sub.tabla) sh += renderTabla(sub.tabla);
+      if(sub.texto) sh += `<div class="sec-intro">${esc(sub.texto)}</div>`;
+      if(sub.nota) sh += `<div class="nota-box"><div class="nota-box-label">Nota</div>${esc(sub.nota)}</div>`;
+      if(sub.secciones) sub.secciones.forEach(ss => { sh += renderSeccionSimple(ss); });
+      inner += renderSubSeccion(sub.titulo||sub.label||'', sh, uid+'_sub'+si);
+    });
+  }
+  if(sec.secciones) {
+    sec.secciones.forEach((sub,si) => {
+      inner += renderSeccionSimple(sub, uid+'_s'+si);
+    });
+  }
+
+  // Farmacológico / no farmacológico
+  ['farmacologico','no_farmacologico','terapias_modificadoras','orden_reduccion'].forEach(k => {
+    if(sec[k]) {
+      let sh = '';
+      const val = sec[k];
+      if(typeof val === 'string') sh = `<div class="sec-intro">${esc(val)}</div>`;
+      else if(Array.isArray(val)) sh = renderBullets(val);
+      else if(val.bullets) sh = renderBullets(val.bullets);
+      inner += renderSubSeccion(k.replace(/_/g,' '), sh, uid+'_'+k);
+    }
+  });
+
+  if(!inner) return '';
+
+  const sid = 'sec_'+uid;
+  return `<div class="sec-block">
+    <div class="sec-hdr" onclick="toggleSec('${sid}')">
+      <div class="sec-hdr-icon" style="background:${meta.bg};color:${meta.color}">${meta.icon}</div>
+      <div class="sec-hdr-label" style="color:${meta.color}">${meta.label}</div>
+      ${sec.titulo&&sec.titulo!==meta.label?`<div style="font-size:12px;color:var(--ink2);flex:2">${esc(sec.titulo)}</div>`:''}
+      <div class="sec-hdr-arr" id="arr_${sid}">▾</div>
+    </div>
+    <div class="sec-body" id="${sid}">${inner}</div>
+  </div>`;
+}
+
+function renderSeccionSimple(sec, uid='') {
+  let h = '';
+  if(sec.titulo) h += `<div style="font-size:12px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 4px">${esc(sec.titulo)}</div>`;
+  if(sec.intro) h += `<div class="sec-intro">${esc(sec.intro)}</div>`;
+  if(sec.bullets) h += renderBullets(sec.bullets);
+  if(sec.tabla) h += renderTabla(sec.tabla);
+  if(sec.texto) h += `<div class="sec-intro">${esc(sec.texto)}</div>`;
+  if(sec.nota) h += `<div class="nota-box"><div class="nota-box-label">Nota</div>${esc(sec.nota)}</div>`;
+  return h;
+}
+
+function renderSubSeccion(titulo, inner, uid) {
+  if(!inner) return '';
+  return `<div class="sub-block">
+    <div class="sub-hdr" onclick="toggleSub('${uid}')">
+      <span>${esc(titulo)}</span><span id="subarr_${uid}">▾</span>
+    </div>
+    <div class="sub-body" id="subbody_${uid}">${inner}</div>
+  </div>`;
+}
+
+function renderBullets(arr) {
+  if(!arr||!arr.length) return '';
+  let h = '<ul class="blist">';
+  arr.forEach(item => {
+    if(typeof item === 'string') h += `<li><span>${esc(item)}</span></li>`;
+    else if(typeof item === 'object') {
+      const text = item.texto||item.label||JSON.stringify(item);
+      const tag = item.tipo||item.tag||'';
+      h += `<li><span>${tag?`<span class="tag-nuevo">${esc(tag)}</span> `:''}${esc(text)}</span></li>`;
+    }
+  });
+  h += '</ul>';
+  return h;
+}
+
+function renderTabla(tabla) {
+  if(!tabla) return '';
+  let h = '<div class="table-wrap"><table><thead><tr>';
+  (tabla.columnas||[]).forEach(c => { h += `<th>${esc(c)}</th>`; });
+  h += '</tr></thead><tbody>';
+  (tabla.filas||[]).forEach(row => {
+    h += '<tr>';
+    (Array.isArray(row)?row:[row]).forEach(cell => { h += `<td>${esc(cell)}</td>`; });
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function toggleSec(id) {
+  const body = document.getElementById(id);
+  const arr = document.getElementById('arr_'+id);
+  if(!body) return;
+  const open = body.classList.toggle('open');
+  if(arr) arr.textContent = open ? '▴' : '▾';
+}
+
+function toggleSub(id) {
+  const body = document.getElementById('subbody_'+id);
+  const arr = document.getElementById('subarr_'+id);
+  if(!body) return;
+  const open = body.classList.toggle('open');
+  if(arr) arr.textContent = open ? '▴' : '▾';
+}
+
+function setMain(html) {
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function goHome() {
+  if(searchOpen) toggleSearch();
+  renderHome();
+}
+
+function toggleSearch() {
+  searchOpen = !searchOpen;
+  const inp = document.getElementById('search-input');
+  const btn = document.getElementById('btn-search');
+  inp.style.display = searchOpen ? '' : 'none';
+  btn.classList.toggle('on', searchOpen);
+  if(searchOpen) { inp.value=''; inp.focus(); renderHome(); }
+}
+
+function doSearch(q) {
+  if(!q||q.length<2) { renderHome(); return; }
+  const qn = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const results = [];
+  MANUAL_DATA.modulos.forEach(mod => {
+    mod.temas.forEach(tema => {
+      const text = JSON.stringify(tema).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(text.includes(qn)) results.push({mod, tema});
+    });
+  });
+  if(!results.length) {
+    setMain(`<div class="no-results">Sin resultados para "${esc(q)}"</div>`);
+    return;
+  }
+  let h = `<div style="font-size:12px;color:var(--slate);margin-bottom:10px">${results.length} resultado${results.length!==1?'s':''}</div><div class="search-res">`;
+  results.forEach(({mod,tema}) => {
+    h += `<div class="search-item" onclick="goTema('${mod.id}','${tema.id}')">
+      <div class="search-mod">${esc(mod.titulo)}</div>
+      <div class="search-titulo">${String(tema.numero).padStart(2,'0')} · ${esc(tema.titulo)}</div>
+    </div>`;
+  });
+  h += '</div>';
+  setMain(h);
+}
+
+// Init
+renderHome();
+</script>
+</body>
+</html>

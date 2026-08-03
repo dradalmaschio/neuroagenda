@@ -294,6 +294,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
       <a class="lbtn" href="javascript:void(0)" onclick="window.open('https://cup.pami.org.ar','_system')"><div class="lic" style="background:rgba(59,130,246,.13)">&#128203;</div><div class="li"><strong>CUP PAMI</strong><span>&#211;rdenes</span></div></a>
       <a class="lbtn" href="javascript:void(0)" onclick="window.open('https://app.rcta.me','_system')"><div class="lic" style="background:rgba(220,38,38,.13)">&#128138;</div><div class="li"><strong>RCTA</strong><span>Recetas</span></div></a>
       <a class="lbtn" href="javascript:void(0)" onclick="window.open('https://www.misrx.com.ar/home','_system')"><div class="lic" style="background:rgba(176,107,255,.2)">🩻</div><div class="li"><strong>Mis RX</strong><span>Recetas</span></div></a>
+      <a class="lbtn" href="javascript:void(0)" onclick="window.open('./manual.html','_blank')"><div class="lic" style="background:rgba(34,211,163,.2)">📖</div><div class="li"><strong>Manual Neurología</strong><span>Ayuda memoria</span></div></a>
       <a class="lbtn" href="javascript:void(0)" onclick="sv('ia')"><div class="lic" style="background:rgba(129,140,248,.13)">&#10022;</div><div class="li"><strong>IA</strong><span>Consultar</span></div></a>
     </div>
   </div>
@@ -1780,12 +1781,6 @@ function saveRecResult(transcript,resumen){
   toast('Resumen de IA guardado ✓');
 }
 
-function ftab(t){
-  document.querySelectorAll('.ftab').forEach((b,i)=>b.classList.toggle('on',['reg','gastos','hist','resumen'][i]===t));
-  document.querySelectorAll('.fsec').forEach(s=>s.classList.remove('on'));
-  document.getElementById('fsec-'+t).classList.add('on');
-  if(t==='hist')renderHist();if(t==='resumen')renderResumen();if(t==='gastos')renderGastos();
-}
 
 function completarPago(idx){
   const c=cobros[idx];if(!c)return;
