@@ -1782,37 +1782,54 @@ function finSrch(){
 }
 function selFinP(id,nom){document.getElementById('fin-pac-id').value=id;document.getElementById('fin-pac-sel').textContent='\u2713 '+nom;document.getElementById('fin-pac-r').innerHTML='';document.getElementById('fin-pac-s').value=nom;}
 function regCobro(){
-  const pid=document.getElementById('fin-pac-id').value;
-  const nombreEscrito=document.getElementById('fin-pac-s').value.trim();
-  const p=pid?getPat(pid):null;
-  const nombreFinal=p?p.nombre:(nombreEscrito||'(sin paciente)');
-  const t=TIPOS.find(x=>x.id===selTipo);
-  if(!t){alert('Seleccioná un tipo de servicio');return;}
-  const senia=parseFloat(document.getElementById('fin-senia').value)||0;
-  const pago=parseFloat(document.getElementById('fin-pago').value)||0;
-  const nota=document.getElementById('fin-nota').value.trim();
-  const fecha=document.getElementById('fin-fecha').value||new Date().toLocaleDateString('es-AR');
-  const primeraVez=document.getElementById('fin-primera')?.checked||false;
-  let total=0,servDesc='';
-  if(t.custom){
-    total=parseFloat(document.getElementById('fin-total-custom').value)||0;
-    servDesc=document.getElementById('fin-servicio').value.trim();
-    if(!total&&!senia&&!pago){alert('Ingresá el precio del servicio o al menos un monto');return;}
-  } else {
-    if(!t.total&&!senia&&!pago){alert('Ingresá al menos un monto');return;}
-    total=t.total||(senia+pago);
-    total=Math.max(total, senia+pago); // si cobró más que el preset, el total real es lo cobrado
+  try{
+    const pid=document.getElementById('fin-pac-id').value;
+    const nombreEscrito=document.getElementById('fin-pac-s').value.trim();
+    const p=pid?getPat(pid):null;
+    const nombreFinal=p?p.nombre:(nombreEscrito||'(sin paciente)');
+    const t=TIPOS.find(x=>x.id===selTipo);
+    if(!t){alert('Seleccioná un tipo de servicio');return;}
+    const senia=parseFloat(String(document.getElementById('fin-senia').value).replace(',','.'))||0;
+    const pago=parseFloat(String(document.getElementById('fin-pago').value).replace(',','.'))||0;
+    const nota=document.getElementById('fin-nota').value.trim();
+    const fecha=document.getElementById('fin-fecha').value||new Date().toLocaleDateString('es-AR');
+    const primeraVez=document.getElementById('fin-primera')?.checked||false;
+    let total=0,servDesc='';
+    if(t.custom){
+      total=parseFloat(String(document.getElementById('fin-total-custom').value).replace(',','.'))||0;
+      servDesc=document.getElementById('fin-servicio').value.trim();
+      if(!total&&!senia&&!pago){alert('Ingresá el precio del servicio o al menos un monto');return;}
+    } else {
+      total=t.total||(senia+pago)||120000;
+      total=Math.max(total,senia+pago);
+    }
+    const cobrado=senia+pago;
+    const saldo=Math.max(0,total-cobrado);
+    const notaFinal=servDesc?(servDesc+(nota?' \u00b7 '+nota:'')):(nota||'');
+    const nuevoCobro={id:Date.now(),fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal,primeraVez};
+    cobros.unshift(nuevoCobro);
+    // Intentar guardar — si no hay espacio, advertir
+    try{
+      localStorage.setItem('co',JSON.stringify(cobros));
+    }catch(e){
+      cobros.shift(); // revertir
+      alert('Sin espacio en el almacenamiento. Exportá el backup y luego borrá algunas imágenes de pacientes para liberar espacio.');
+      return;
+    }
+    // Limpiar formulario
+    ['fin-pac-id','fin-pac-s','fin-senia','fin-pago','fin-nota'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const fp=document.getElementById('fin-primera');if(fp)fp.checked=false;
+    const cf=document.getElementById('custom-fields');if(cf)cf.style.display='none';
+    const sp=document.getElementById('saldo-preview');if(sp)sp.textContent='';
+    document.getElementById('fin-pac-sel').textContent='';
+    // Ir al historial para confirmar visualmente
+    ftab('hist');
+    renderHist();
+    toast('\u2713 Ingreso registrado: $'+cobrado.toLocaleString('es-AR')+(saldo>0?' (resta $'+saldo.toLocaleString('es-AR')+')':''));
+  }catch(err){
+    alert('Error al registrar: '+err.message);
+    console.error('regCobro error:',err);
   }
-  const cobrado=senia+pago,saldo=Math.max(0,total-cobrado);
-  const notaFinal=servDesc?(servDesc+(nota?' · '+nota:'')):(nota||'');
-  cobros.unshift({id:Date.now(),fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal,primeraVez});
-  S('co',cobros);
-  ['fin-pac-id','fin-pac-s','fin-senia','fin-pago','fin-nota'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const fp=document.getElementById('fin-primera');if(fp)fp.checked=false;
-  const cf=document.getElementById('custom-fields');if(cf)cf.style.display='none';
-  const sp=document.getElementById('saldo-preview');if(sp)sp.textContent='';
-  document.getElementById('fin-pac-sel').textContent='';
-  toast('✓ Ingreso: $'+cobrado.toLocaleString('es-AR')+(saldo>0?' (resta $'+saldo.toLocaleString('es-AR')+')':''));
 }
 function renderGastos(){
   document.getElementById('gastos-rapidos').innerHTML=GASTOS_HAB.map(g=>'<button class="abtn2" style="border-color:'+g.color+'22" onclick="quickGasto(\''+g.label+'\')"><div class="lic" style="background:'+g.color+'22;color:'+g.color+';font-size:13px;font-weight:700">'+g.label[0]+'</div><div><strong style="font-size:13px">'+g.label+'</strong><div style="font-size:11px;color:var(--mt)">'+g.nota+'</div></div></button>').join('');
