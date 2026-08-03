@@ -1786,11 +1786,16 @@ function completarPago(idx){
   const c=cobros[idx];if(!c)return;
   const saldo=c.saldo;
   if(!saldo||saldo<=0){toast('Ya está pagado');return;}
-  if(!confirm('Registrar pago completo de $'+saldo.toLocaleString('es-AR')+'?'))return;
+  if(!confirm('Registrar pago de $'+saldo.toLocaleString('es-AR')+'?\nSe va a registrar con la fecha de HOY (el mes en que se cobra cuenta para los informes).'))return;
+  const hoy=new Date().toLocaleDateString('es-AR');
   cobros[idx].pago=(cobros[idx].pago||0)+saldo;
   cobros[idx].saldo=0;
-  S('co',cobros);renderFin();
-  toast('Pago completado \u2713');
+  cobros[idx].fecha_cobro=hoy;   // fecha real del cobro
+  cobros[idx].fecha=hoy;          // fecha que cuenta para el resumen mensual
+  localStorage.setItem('na4_co',JSON.stringify(cobros));
+  if(typeof dbxScheduleSave==='function')dbxScheduleSave();
+  toast('Pago completado \u2713 · '+hoy);
+  if(typeof renderResumen==='function')renderResumen();
 }
 function renderFin(){
   document.getElementById('tipo-btns').innerHTML=TIPOS.map(t=>'<button class="tipo-btn" style="background:'+t.color+'22;color:'+t.color+';border-color:'+(selTipo===t.id?t.color:'transparent')+'" onclick="selT(\''+t.id+'\')">'+t.label+'</button>').join('');
@@ -1870,7 +1875,7 @@ function regCobro(){
     const cobrado=senia+pago;
     const saldo=Math.max(0,total-cobrado);
     const notaFinal=servDesc?(servDesc+(nota?' \u00b7 '+nota:'')):(nota||'');
-    const nuevoCobro={id:Date.now(),fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal,primeraVez};
+    const nuevoCobro={id:Date.now(),fecha,fecha_consulta:fecha,tipo:selTipo,tipoLabel:t.label,pacienteId:pid||'',pacienteNombre:nombreFinal,total,senia,pago,saldo,nota:notaFinal,primeraVez};
     cobros.unshift(nuevoCobro);
     // Guardar usando S() que tiene el prefijo correcto na4_
     try{
@@ -2033,7 +2038,7 @@ function finShowDet(key){
         return '<div class="pay-item" style="flex-direction:column;align-items:stretch">'+
           '<div style="display:flex;gap:10px;align-items:flex-start">'+
           '<div class="pay-info"><div class="pay-name">'+c.pacienteNombre+(c.primeraVez?' <span style="font-size:10px;color:#34D399">⭐ 1ª vez</span>':'')+'</div>'+
-          '<div class="pay-meta">'+c.fecha+(c.nota?' · '+c.nota:'')+'</div>'+
+          '<div class="pay-meta">'+c.fecha+(c.fecha_consulta&&c.fecha_consulta!==c.fecha?' <span style="color:var(--mt2);font-size:11px">(consulta: '+c.fecha_consulta+')</span>':'')+(c.nota?' · '+c.nota:'')+'</div>'+
           '<div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap">'+
           (c.senia?'<span class="tag-s">Seña $'+c.senia.toLocaleString('es-AR')+'</span>':'')+
           (c.pago?'<span class="tag-p">Consultorio $'+c.pago.toLocaleString('es-AR')+'</span>':'')+
