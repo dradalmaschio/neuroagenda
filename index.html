@@ -937,14 +937,13 @@ async function resumirJornada(dkk, btn){
     const meds=pat?.medicacion||'';
     const notasPac=(notas2[t.pacienteId]||[]).slice(0,3);
     const notasTexto=notasPac.map(n=>(n.fecha?n.fecha+': ':'')+( n.texto||n.nota||'')).join('\n');
-    return `== ${hora} | ${t.pacienteNombre} ==
-Tipo de consulta: ${t.tipo||'presencial'}${t.motivo?' | Motivo: '+t.motivo:''}
-Diagnóstico registrado: ${dxLabel||'(no registrado)'}
-Antecedentes: ${antec||'(no registrados)'}
-Medicación: ${meds||'(no registrada)'}
-Últimas notas de consulta:
-${notasTexto||'(sin notas)'}`;
-  }).join('\n\n');
+    return '== '+hora+' | '+t.pacienteNombre+' ==\n'+
+      'Tipo de consulta: '+(t.tipo||'presencial')+(t.motivo?' | Motivo: '+t.motivo:'')+'\n'+
+      'Diagnóstico registrado: '+(dxLabel||'(no registrado)')+'\n'+
+      'Antecedentes: '+(antec||'(no registrados)')+'\n'+
+      'Medicación: '+(meds||'(no registrada)')+'\n'+
+      'Últimas notas de consulta:\n'+
+      (notasTexto||'(sin notas)');  }).join('\n\n');
 
   try{
     const resp=await fetch('https://neuroagenda-ai-proxy.dradalmaschio.workers.dev/',{
@@ -1065,6 +1064,58 @@ function confT(reservado){
   document.getElementById('ov-turno').classList.add('h');
   buildAg();buildHome();
   toast(reservado?'🔒 Turno reservado':'Turno asignado');
+
+  // Ofrecer recordatorio para cualquier turno futuro (ad-hoc o template)
+  if(!reservado){
+    const [hh,mm]=mslot.hora.split(':').map(Number);
+    const partes=mslot.dk.split('-');
+    const fechaTurno=new Date(+partes[0],+partes[1]-1,+partes[2],hh,mm);
+    if(fechaTurno>new Date()) ofrecerRecordatorio(nombreFinal,mslot.hora,mslot.dk,tipoFinal);
+  }
+}
+
+function ofrecerRecordatorio(nombre,hora,dkk,tipo){
+  // Construir URL de Google Calendar
+  const [hh,mm]=hora.split(':').map(Number);
+  const partes=dkk.split('-');
+  const y=partes[0],mo=String(+partes[1]).padStart(2,'0'),d=String(+partes[2]).padStart(2,'0');
+  const hhS=String(hh).padStart(2,'0'),mmS=String(mm).padStart(2,'0');
+  // Fin: 45 min después
+  const finD=new Date(+y,+mo-1,+d,hh,mm+45);
+  const fhh=String(finD.getHours()).padStart(2,'0'),fmm=String(finD.getMinutes()).padStart(2,'0');
+  const fdy=finD.getFullYear(),fdmo=String(finD.getMonth()+1).padStart(2,'0'),fdd=String(finD.getDate()).padStart(2,'0');
+  const startStr=y+mo+d+'T'+hhS+mmS+'00';
+  const endStr=fdy+''+fdmo+''+fdd+'T'+fhh+fmm+'00';
+  const tipoLabel=tipo==='video'?'Videoconsulta':'Presencial';
+  const gcTitle=encodeURIComponent('Consulta Neurología — '+nombre);
+  const gcDetails=encodeURIComponent(tipoLabel+' · '+nombre);
+  const gcUrl='https://calendar.google.com/calendar/r/eventedit?text='+gcTitle+'&dates='+startStr+'/'+endStr+'&details='+gcDetails;
+
+  // Modal flotante
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:4000;display:flex;align-items:flex-end;justify-content:center';
+  const inner=document.createElement('div');
+  inner.style.cssText='background:var(--bg);border-radius:18px 18px 0 0;padding:24px 20px 32px;width:100%;max-width:480px';
+  inner.innerHTML=
+    '<div style="font-size:13px;font-weight:700;margin-bottom:4px">\uD83D\uDCC5 Turno guardado</div>'+
+    '<div style="font-size:15px;font-weight:700;margin-bottom:2px">'+nombre+'</div>'+
+    '<div style="font-size:13px;color:var(--mt);margin-bottom:18px">'+tipoLabel+' \u00b7 '+hora+' \u00b7 '+d+'/'+mo+'/'+y+'</div>'+
+    '<div style="font-size:12px;color:var(--mt);margin-bottom:14px">\u00bfAgreg\u00e1s un recordatorio al calendario?</div>';
+  const btnCal=document.createElement('a');
+  btnCal.href=gcUrl;btnCal.target='_blank';
+  btnCal.className='btnp';
+  btnCal.style.cssText='display:block;text-align:center;text-decoration:none;margin-bottom:10px';
+  btnCal.textContent='\uD83D\uDCC5 Abrir Google Calendar';
+  btnCal.onclick=function(){setTimeout(function(){if(ov.parentNode)document.body.removeChild(ov);},300);};
+  const btnNo=document.createElement('button');
+  btnNo.className='back';
+  btnNo.style.cssText='width:100%;justify-content:center';
+  btnNo.textContent='Ahora no';
+  btnNo.onclick=function(){if(ov.parentNode)document.body.removeChild(ov);};
+  inner.appendChild(btnCal);inner.appendChild(btnNo);
+  ov.appendChild(inner);
+  ov.onclick=function(e){if(e.target===ov&&ov.parentNode)document.body.removeChild(ov);};
+  document.body.appendChild(ov);
 }
 
 function openModAdHoc(dkk){
@@ -1222,6 +1273,23 @@ function delImg(pacId,imgIdx){
   const imgs=getPacImgs(pacId);imgs.splice(imgIdx,1);setPacImgs(pacId,imgs);showPt(pacId);
 }
 
+function comprimirImagen(file, maxW, quality, cb){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      let w=img.width,h=img.height;
+      if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      cb(canvas.toDataURL('image/jpeg',quality));
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function addImgFromFile(pacId){
   const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
   inp.onchange=e=>{
@@ -1229,15 +1297,19 @@ function addImgFromFile(pacId){
     const imgs=getPacImgs(pacId);
     let pending=files.length;
     files.forEach(file=>{
-      if(file.size>5*1024*1024){alert('Imagen demasiado grande (máx 5MB): '+file.name);pending--;if(!pending)showPt(pacId);return;}
-      const reader=new FileReader();
-      reader.onload=ev=>{imgs.push({src:ev.target.result,name:file.name,fecha:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase()});setPacImgs(pacId,imgs);pending--;if(!pending)showPt(pacId);};
-      reader.readAsDataURL(file);
+      comprimirImagen(file, 1200, 0.75, dataUrl=>{
+        try{
+          imgs.push({src:dataUrl,name:file.name,fecha:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase()});
+          setPacImgs(pacId,imgs);
+        } catch(err){
+          alert('Sin espacio para guardar imagen. Borrá algunas fotos anteriores o exportá el backup primero.');
+        }
+        pending--;if(!pending)showPt(pacId);
+      });
     });
   };
   inp.click();
 }
-
 function renderImgs(pacId){
   const imgs=getPacImgs(pacId);
   const wrap=document.createElement('div');
@@ -1275,21 +1347,7 @@ function delImg(pacId,imgIdx){
   const imgs=getPacImgs(pacId);imgs.splice(imgIdx,1);setPacImgs(pacId,imgs);showPt(pacId);
 }
 
-function addImgFromFile(pacId){
-  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
-  inp.onchange=e=>{
-    const files=Array.from(e.target.files);if(!files.length)return;
-    const imgs=getPacImgs(pacId);
-    let pending=files.length;
-    files.forEach(file=>{
-      if(file.size>5*1024*1024){alert('Imagen demasiado grande (máx 5MB): '+file.name);pending--;if(!pending)showPt(pacId);return;}
-      const reader=new FileReader();
-      reader.onload=ev=>{imgs.push({src:ev.target.result,name:file.name,fecha:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase()});setPacImgs(pacId,imgs);pending--;if(!pending)showPt(pacId);};
-      reader.readAsDataURL(file);
-    });
-  };
-  inp.click();
-}
+
 
 
 function editField(pacId, field, labelTxt, isMultiline){
@@ -1729,11 +1787,13 @@ function regCobro(){
   const p=pid?getPat(pid):null;
   const nombreFinal=p?p.nombre:(nombreEscrito||'(sin paciente)');
   const t=TIPOS.find(x=>x.id===selTipo);
+  if(!t){alert('Seleccioná un tipo de servicio');return;}
   const senia=parseFloat(document.getElementById('fin-senia').value)||0;
   const pago=parseFloat(document.getElementById('fin-pago').value)||0;
   const nota=document.getElementById('fin-nota').value.trim();
   const fecha=document.getElementById('fin-fecha').value||new Date().toLocaleDateString('es-AR');
   const primeraVez=document.getElementById('fin-primera')?.checked||false;
+  let total=0,servDesc='';
   if(t.custom){
     total=parseFloat(document.getElementById('fin-total-custom').value)||0;
     servDesc=document.getElementById('fin-servicio').value.trim();
@@ -1954,7 +2014,57 @@ async function sendMsg(){
 function aMsg(role,html){const id='m'+(++mid),div=document.createElement('div');div.className='msg '+role;div.id=id;div.innerHTML=role==='a'?'<div class="mlbl">ASISTENTE</div>'+html:html;document.getElementById('msgs').appendChild(div);div.scrollIntoView({behavior:'smooth',block:'end'});return id;}
 function updMsg(id,html){const d=document.getElementById(id);if(d)d.innerHTML='<div class="mlbl">ASISTENTE</div>'+html;}
 
+// ── Sistema de notificaciones de turnos ─────────────────────────
+let _notifYaAvisados=new Set();
+
+function initNotifs(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='default'){
+    setTimeout(()=>{
+      const t=document.createElement('div');
+      t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;z-index:9999;max-width:300px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+      t.innerHTML='<div style="font-size:13px;margin-bottom:8px">🔔 ¿Activar avisos de turnos?<br><span style="color:var(--mt);font-size:11px">Te avisa 15 min antes de cada consulta</span></div>'+
+        '<button onclick="Notification.requestPermission().then(p=>{this.parentElement.remove();if(p===\'granted\')toast(\'✓ Avisos activados\');})" '+
+        'style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;margin-right:8px">Activar</button>'+
+        '<button onclick="this.parentElement.remove()" style="background:none;border:1px solid var(--bd);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;color:var(--mt)">Ahora no</button>';
+      document.body.appendChild(t);setTimeout(()=>t.remove(),15000);
+    },3000);
+  }
+}
+
+function notifTurno(titulo,body,submsg,fechaTurno){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--sf);border:1px solid var(--ac)44;border-radius:12px;padding:12px 16px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  t.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--ac);margin-bottom:2px">'+titulo+'</div><div style="font-size:13px">'+body+'</div><div style="font-size:11px;color:var(--mt);margin-top:2px">'+submsg+'</div>';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),7000);
+  if(Notification.permission==='granted'){
+    try{new Notification(titulo,{body:body+' · '+submsg});}catch(e){}
+  }
+  if(fechaTurno){
+    const ms=(fechaTurno-new Date())-15*60*1000;
+    if(ms>0&&ms<24*60*60*1000)setTimeout(()=>notifTurno('🔔 Turno en 15 min',body,'Es ahora',null),ms);
+  }
+}
+
+function checkTurnosProximos(){
+  const ahora=new Date(),hoy=dk(ahora),sd=turnos[hoy]||{};
+  Object.entries(sd).forEach(([hora,t])=>{
+    if(!t||!t.pacienteNombre||t.reservado)return;
+    const [hh,mm]=hora.split(':').map(Number);
+    const td=new Date(ahora);td.setHours(hh,mm,0,0);
+    const diff=(td-ahora)/60000;
+    const key=hoy+'-'+hora;
+    if(diff>=14&&diff<=16&&!_notifYaAvisados.has(key)){
+      _notifYaAvisados.add(key);
+      notifTurno('🔔 Turno en 15 minutos',t.pacienteNombre+' · '+hora,(t.tipo==='video'?'📹 Videoconsulta':'🏥 Presencial'),null);
+    }
+  });
+}
+
 buildHome();buildPills();rpts();buildAg();buildStats();renderFin();
+initNotifs();
+setInterval(checkTurnosProximos,60000);
+checkTurnosProximos();
 
 
 // ── EXPORT / IMPORT ─────────────────────────────────────────
