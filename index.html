@@ -940,7 +940,9 @@ function renderSlot(dkk,hora,tipo,a,adHoc){
     pacHtml='<div class="apac" style="color:'+color+'"><strong>'+(adHoc?'⚡ ':'')+a.pacienteNombre+'</strong>'
       +(sinReg?' <span style="font-size:10px;color:var(--mt2)">(sin registrar)</span>':'')
       +(a.motivo?' · <span style="color:var(--mt2);font-size:12px">'+a.motivo+'</span>':'')+'</div>';
+    const tipoIngreso=tipo==='video'?'video':'presencial';
     accHtml='<div style="display:flex;gap:4px">'
+      +'<button class="ybtn" style="color:var(--gn);border-color:rgba(34,211,163,.3)" title="Registrar ingreso" onclick="abrirIngresoRapido(\''+a.pacienteId+'\',\''+a.pacienteNombre+'\',\''+tipoIngreso+'\')">$</button>'
       +'<button class="ybtn" onclick="openMod(\''+dkk+'\',\''+hora+'\',\''+(tipo||'presencial')+'\','+(adHoc?'true':'false')+',true)">✎</button>'
       +'<button class="xbtn" onclick="delT(\''+dkk+'\',\''+hora+'\')">✕</button>'
       +'</div>';
@@ -1043,6 +1045,65 @@ function borrarResumenIA(dkk){
   const panel=document.getElementById('ag-ia-'+dkk);
   if(panel){panel.innerHTML='';panel.style.display='none';}
   toast('Resumen borrado — tocá ✦ IA para regenerar');
+}
+
+function irSelTipo(id){
+  document.getElementById('ir-tipo').value=id;
+  const t=TIPOS.find(x=>x.id===id);
+  if(t&&t.senia) document.getElementById('ir-senia').placeholder='Seña sugerida: $'+t.senia.toLocaleString('es-AR');
+  else document.getElementById('ir-senia').placeholder='$0';
+  document.querySelectorAll('.ir-tipo-btn').forEach(b=>{
+    const on=b.dataset.id===id;
+    b.style.borderColor=on?b.dataset.color:'transparent';
+    b.style.background=on?b.dataset.color+'33':b.dataset.color+'18';
+  });
+}
+
+function abrirIngresoRapido(pacId, pacNombre, tipoConsulta){
+  document.getElementById('ir-nombre').textContent=pacNombre;
+  document.getElementById('ir-pac-id').value=pacId||'';
+  document.getElementById('ir-pac-nombre').value=pacNombre||'';
+  document.getElementById('ir-primera').checked=false;
+  document.getElementById('ir-senia').value='';
+  document.getElementById('ir-pago').value='';
+  document.getElementById('ir-nota').value='';
+  // Renderizar botones de tipo
+  const tipoInicial=tipoConsulta==='video'?'video':'presencial';
+  const btns=document.getElementById('ir-tipo-btns');
+  btns.innerHTML=TIPOS.filter(t=>t.id!=='consulta').map(t=>
+    '<button class="ir-tipo-btn" data-id="'+t.id+'" data-color="'+t.color+'" onclick="irSelTipo(\''+t.id+'\')" style="background:'+t.color+'18;border:1.5px solid transparent;color:'+t.color+';padding:5px 11px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500">'+t.label+'</button>'
+  ).join('');
+  irSelTipo(tipoInicial);
+  document.getElementById('ingreso-rapido-ov').style.display='flex';
+  setTimeout(()=>document.getElementById('ir-senia').focus(),80);
+}
+
+function registrarIngresoRapido(){
+  const pacId=document.getElementById('ir-pac-id').value;
+  const pacNombre=document.getElementById('ir-pac-nombre').value;
+  const tipo=document.getElementById('ir-tipo').value||'presencial';
+  const senia=parseFloat(document.getElementById('ir-senia').value)||0;
+  const pago=parseFloat(document.getElementById('ir-pago').value)||0;
+  const nota=document.getElementById('ir-nota').value.trim();
+  const primera=document.getElementById('ir-primera').checked;
+  const t=TIPOS.find(x=>x.id===tipo)||TIPOS[0];
+  const cobrado=senia+pago;
+  if(!cobrado){alert('Ingresá al menos un monto');return;}
+  const total=Math.max(t.total||0,cobrado);
+  const saldo=Math.max(0,total-cobrado);
+  const fecha=new Date().toLocaleDateString('es-AR');
+  const nuevoCobro={id:Date.now(),fecha,fecha_consulta:fecha,tipo,tipoLabel:t.label,pacienteId:pacId||'',pacienteNombre:pacNombre,total,senia,pago,saldo,nota,primeraVez:primera};
+  cobros.unshift(nuevoCobro);
+  try{
+    localStorage.setItem('na4_co',JSON.stringify(cobros));
+    if(typeof dbxScheduleSave==='function')dbxScheduleSave();
+  }catch(e){
+    cobros.shift();
+    alert('Sin espacio de almacenamiento.');
+    return;
+  }
+  document.getElementById('ingreso-rapido-ov').style.display='none';
+  toast('\u2713 '+t.label+' · $'+cobrado.toLocaleString('es-AR')+(saldo>0?' · resta $'+saldo.toLocaleString('es-AR'):''));
 }
 
 function buildAg(){
@@ -1251,10 +1312,18 @@ function savePat(){
   const dxP=dxPRaw==='__libre__'?(document.getElementById('pat-dx-libre')?.value.trim()||''):dxPRaw;
   const dxI=document.getElementById('pat-dx-ia').value;
   const notaTxt=document.getElementById('pat-notas').value.trim();
+  const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
-    if(!patEdits[id])patEdits[id]={};
-    Object.assign(patEdits[id],{nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()});
-    S('pe',patEdits);
+    if(id.startsWith('new_')){
+      // Paciente creado por la usuaria → actualizar en extraPats directamente
+      const eIdx=extraPats.findIndex(p=>p.id===id);
+      if(eIdx!==-1){Object.assign(extraPats[eIdx],campos);S('ep',extraPats);}
+    } else {
+      // Paciente base → editar vía patEdits
+      if(!patEdits[id])patEdits[id]={};
+      Object.assign(patEdits[id],campos);
+      S('pe',patEdits);
+    }
     if(dxP){dxPropio[id]=dxP;S('dxp',dxPropio);}else{delete dxPropio[id];S('dxp',dxPropio);}
     if(dxI){dxIA[id]=dxI;S('dxi',dxIA);}
     if(notaTxt){const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();if(!notas2[id])notas2[id]=[];notas2[id].push({fecha:f,texto:notaTxt});S('n2',notas2);}
@@ -2474,6 +2543,37 @@ window.addEventListener('load', function(){
     <div id="fin-cp-err" style="color:var(--rd);font-size:12px;min-height:18px;margin-bottom:10px"></div>
     <button class="btnp" onclick="finSavePass()">Guardar contraseña</button>
     <button class="back" style="margin-top:10px;width:100%;justify-content:center" onclick="document.getElementById('fin-chpass-ov').style.display='none'">Cancelar</button>
+  </div>
+</div>
+
+<div id="ingreso-rapido-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:3000;align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg);border-radius:18px 18px 0 0;padding:22px 18px 32px;width:100%;max-width:480px;border-top:1px solid var(--bd)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Registrar ingreso</div>
+        <div style="font-size:15px;font-weight:700" id="ir-nombre"></div>
+      </div>
+      <button onclick="document.getElementById('ingreso-rapido-ov').style.display='none'" style="background:none;border:none;color:var(--mt);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <input type="hidden" id="ir-pac-id">
+    <input type="hidden" id="ir-pac-nombre">
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Tipo de servicio</label>
+      <div id="ir-tipo-btns" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <input type="hidden" id="ir-tipo">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Seña / parcial</label>
+        <input type="number" id="ir-senia" placeholder="$0" style="width:100%;padding:10px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:15px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Pago en consultorio</label>
+        <input type="number" id="ir-pago" placeholder="$0" style="width:100%;padding:10px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:15px;box-sizing:border-box"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer">
+      <input type="checkbox" id="ir-primera" style="width:18px;height:18px;accent-color:var(--gn)">
+      <span style="font-size:13px;font-weight:600;color:var(--gn)">⭐ Primera vez</span>
+    </label>
+    <input type="text" id="ir-nota" placeholder="Nota (opcional)" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:13px;box-sizing:border-box;margin-bottom:12px">
+    <button class="btnp" onclick="registrarIngresoRapido()">Registrar ingreso</button>
   </div>
 </div>
 
