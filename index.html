@@ -509,8 +509,8 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   </div>
 </div>
 
-<div class="ov h" id="ov-pat" onclick="clsOv('ov-pat',event)">
-  <div class="mod" onclick="event.stopPropagation()">
+<div class="ov h" id="ov-pat">
+  <div class="mod">
     <div class="mod-ttl" id="pat-mod-ttl">Nuevo paciente</div>
     <input type="hidden" id="pat-id">
     <label>Nombre y apellido *</label><input type="text" id="pat-nombre" placeholder="Apellido, Nombre">
@@ -525,17 +525,9 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <label>Email</label><input type="text" id="pat-email" placeholder="correo@ejemplo.com">
     <label>Dirección</label><input type="text" id="pat-dir" placeholder="Calle, número, ciudad...">
     <label>Tu diagnóstico (criterio propio)</label>
-    <div onclick="abrirDxPicker('propio')" style="cursor:pointer;width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;min-height:40px;display:flex;align-items:center;justify-content:space-between">
-      <span id="pat-dx-propio-lbl" style="color:var(--mt)">-- Sin asignar --</span>
-      <span style="color:var(--mt);font-size:12px">▾</span>
-    </div>
-    <input type="hidden" id="pat-dx-propio">
+    <select id="pat-dx-propio"><option value="">-- Sin asignar --</option></select>
     <label>Diagnóstico inferido por IA</label>
-    <div onclick="abrirDxPicker('ia')" style="cursor:pointer;width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;min-height:40px;display:flex;align-items:center;justify-content:space-between">
-      <span id="pat-dx-ia-lbl" style="color:var(--mt)">-- Sin asignar --</span>
-      <span style="color:var(--mt);font-size:12px">▾</span>
-    </div>
-    <input type="hidden" id="pat-dx-ia">
+    <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
     <label>Antecedentes</label>
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
     <label>Medicación actual</label>
@@ -693,7 +685,7 @@ function enviarWA(id){
   const nombre=p.nombre.split(',')[0].trim();
   let msg='Hola '+nombre+', le saluda la Dra. Dal Maschio.\n\n';
   if(proxVal){
-    msg+='Le escribo para recordarle que sería conveniente realizar un control neurológico durante '+proxVal+'.\n\n';
+    msg+='Le escribo para recordarle que sería conveniente realizar un control neurológico alrededor del '+proxVal+'.\n\n';
     msg+='Cuando guste, puede comunicarse para coordinar el turno.\n\n';
   } else {
     msg+='Le escribo para recordarle que sería conveniente realizar un control neurológico.\n\n';
@@ -703,10 +695,21 @@ function enviarWA(id){
     msg+='En caso de tener estudios pendientes, sería ideal traerlos a la consulta.\n\n';
   }
   msg+='Quedo a disposición. ¡Hasta pronto!';
+  // Abrir WhatsApp Business con número destino del paciente
   const tel=(p.telefono||'').replace(/\D/g,'');
   const telArg=tel?(tel.startsWith('54')?tel:'54'+tel):'';
-  const url='https://wa.me/'+telArg+'?text='+encodeURIComponent(msg);
-  window.open(url,'_blank');
+  // intent para forzar WhatsApp Business (Android) con número de origen 11-2297-3945
+  const waUrl=telArg
+    ? 'https://wa.me/'+telArg+'?text='+encodeURIComponent(msg)
+    : 'https://wa.me/?text='+encodeURIComponent(msg);
+  // Intentar abrir WA Business directamente
+  const intentUrl='intent://send?phone='+telArg+'&text='+encodeURIComponent(msg)+'#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end';
+  const a=document.createElement('a');
+  a.href=intentUrl;a.target='_blank';
+  document.body.appendChild(a);
+  a.click();
+  // Fallback a wa.me si el intent falla (iOS / WA no instalado)
+  setTimeout(function(){document.body.removeChild(a);},500);
 }
 
 function setNextApp(id){
@@ -1323,17 +1326,19 @@ function elegirDx(campo,key,label){
   document.getElementById('dx-picker-ov').style.display='none';
 }
 
-function buildDxDatalist(){} // ya no se usa
-function buildDxOpts(sel){return DL[sel]||sel||'';}
+function buildDxOpts(sel){
+  let o='<option value="">-- Sin asignar --</option>';
+  Object.entries(DL).forEach(([k,v])=>{o+='<option value="'+k+'"'+(sel===k?' selected':'')+'>'+v+'</option>';});
+  return o;
+}
+function buildDxDatalist(){}
 function toggleDxLibre(){}
 function openNewPat(){
   document.getElementById('pat-mod-ttl').textContent='Nuevo paciente';
   document.getElementById('pat-id').value='';
-  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds','pat-dx-propio','pat-dx-ia'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('pat-dx-propio-lbl').textContent='-- Sin asignar --';
-  document.getElementById('pat-dx-propio-lbl').style.color='var(--mt)';
-  document.getElementById('pat-dx-ia-lbl').textContent='-- Sin asignar --';
-  document.getElementById('pat-dx-ia-lbl').style.color='var(--mt)';
+  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts('');
+  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts('');
   document.getElementById('ov-pat').classList.remove('h');  setTimeout(()=>document.getElementById('pat-nombre').focus(),80);
 }
 function openEditPat(id){
@@ -1350,32 +1355,18 @@ function openEditPat(id){
   document.getElementById('pat-notas').value='';
   document.getElementById('pat-antec').value=p.antecedentes||'';
   document.getElementById('pat-meds').value=p.medicacion_actual||'';
-  buildDxDatalist('dx-list-propio');
-  buildDxDatalist('dx-list-ia');
-  document.getElementById('pat-dx-propio').value=p.dx_propio||'';
-  document.getElementById('pat-dx-propio-lbl').textContent=DL[p.dx_propio]||p.dx_propio||'-- Sin asignar --';
-  document.getElementById('pat-dx-propio-lbl').style.color=(p.dx_propio)?'var(--tx)':'var(--mt)';
+  buildDxDatalist();
+  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||'');
   const libreEl=document.getElementById('pat-dx-libre');if(libreEl)libreEl.style.display='none';
-  document.getElementById('pat-dx-ia').value=p.dx_ia||p.diagnostico||'';
-  const dxIVal=p.dx_ia||p.diagnostico||'';
-  document.getElementById('pat-dx-ia-lbl').textContent=DL[dxIVal]||dxIVal||'-- Sin asignar --';
-  document.getElementById('pat-dx-ia-lbl').style.color=dxIVal?'var(--tx)':'var(--mt)';
+  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||'');
   document.getElementById('ov-pat').classList.remove('h');
 }
 function savePat(){
   const id=document.getElementById('pat-id').value;
   const nombre=document.getElementById('pat-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio');return;}
-  // Traducir label → key del DL (o guardar texto libre si no matchea)
-  const dxPLabel=document.getElementById('pat-dx-propio').value.trim();
-  const dxILabel=document.getElementById('pat-dx-ia').value.trim();
-  function labelToKey(label){
-    if(!label)return '';
-    const found=Object.entries(DL).find(([k,v])=>v.toLowerCase()===label.toLowerCase());
-    return found?found[0]:label; // si no matchea, guardar el texto libre directamente
-  }
-  const dxP=labelToKey(dxPLabel);
-  const dxI=labelToKey(dxILabel);
+  const dxP=document.getElementById('pat-dx-propio').value;
+  const dxI=document.getElementById('pat-dx-ia').value;
   const notaTxt=document.getElementById('pat-notas').value.trim();
   const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
