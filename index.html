@@ -525,14 +525,10 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <label>Email</label><input type="text" id="pat-email" placeholder="correo@ejemplo.com">
     <label>Dirección</label><input type="text" id="pat-dir" placeholder="Calle, número, ciudad...">
     <label>Tu diagnóstico (criterio propio)</label>
-    <input type="text" id="pat-dx-propio-txt" placeholder="Tocá para elegir o escribí..." autocomplete="off"
-      onfocus="mostrarDxList('propio',this)" oninput="filtrarDxList('propio',this.value,this)"
-      style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box">
+    <input type="text" id="pat-dx-propio-txt" placeholder="Ej: Migraña, Parkinson, Alzheimer...">
     <input type="hidden" id="pat-dx-propio">
     <label>Diagnóstico inferido por IA</label>
-    <input type="text" id="pat-dx-ia-txt" placeholder="Tocá para elegir o escribí..." autocomplete="off"
-      onfocus="mostrarDxList('ia',this)" oninput="filtrarDxList('ia',this.value,this)"
-      style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box">
+    <input type="text" id="pat-dx-ia-txt" placeholder="Ej: Migraña, Parkinson, Alzheimer...">
     <input type="hidden" id="pat-dx-ia">
     <label>Antecedentes</label>
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
