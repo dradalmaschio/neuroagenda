@@ -525,9 +525,15 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <label>Email</label><input type="text" id="pat-email" placeholder="correo@ejemplo.com">
     <label>Dirección</label><input type="text" id="pat-dir" placeholder="Calle, número, ciudad...">
     <label>Tu diagnóstico (criterio propio)</label>
-    <select id="pat-dx-propio"><option value="">-- Sin asignar --</option></select>
+    <input type="text" id="pat-dx-propio-txt" placeholder="Tocá para elegir o escribí..." autocomplete="off"
+      onfocus="mostrarDxList('propio',this)" oninput="filtrarDxList('propio',this.value,this)"
+      style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box">
+    <input type="hidden" id="pat-dx-propio">
     <label>Diagnóstico inferido por IA</label>
-    <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
+    <input type="text" id="pat-dx-ia-txt" placeholder="Tocá para elegir o escribí..." autocomplete="off"
+      onfocus="mostrarDxList('ia',this)" oninput="filtrarDxList('ia',this.value,this)"
+      style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box">
+    <input type="hidden" id="pat-dx-ia">
     <label>Antecedentes</label>
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
     <label>Medicación actual</label>
@@ -685,7 +691,12 @@ function enviarWA(id){
   const nombre=p.nombre.split(',')[0].trim();
   let msg='Hola '+nombre+', le saluda la Dra. Dal Maschio.\n\n';
   if(proxVal){
-    msg+='Le escribo para recordarle que sería conveniente realizar un control neurológico alrededor del '+proxVal+'.\n\n';
+    const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const partes=proxVal.split('/');
+    const diaNum=partes[0]?parseInt(partes[0],10):'';
+    const mesNom=partes[1]?meses[parseInt(partes[1],10)-1]:'';
+    const fechaFmt=diaNum&&mesNom?diaNum+' de '+mesNom:proxVal;
+    msg+='Le escribo para recordarle que sería conveniente realizar un control neurológico alrededor del '+fechaFmt+'.\n\n';
     msg+='Cuando guste, puede comunicarse para coordinar el turno.\n\n';
   } else {
     msg+='Le escribo para recordarle que sería conveniente realizar un control neurológico.\n\n';
@@ -1333,12 +1344,51 @@ function buildDxOpts(sel){
 }
 function buildDxDatalist(){}
 function toggleDxLibre(){}
+
+function mostrarDxList(campo,inp){
+  filtrarDxList(campo,'',inp||document.getElementById('pat-dx-'+campo+'-txt'));
+}
+function filtrarDxList(campo,q,inp){
+  const drop=document.getElementById('dx-drop-'+campo);
+  if(!inp)inp=document.getElementById('pat-dx-'+campo+'-txt');
+  const rect=inp.getBoundingClientRect();
+  drop.style.left=rect.left+'px';
+  drop.style.width=rect.width+'px';
+  const spaceBelow=window.innerHeight-rect.bottom;
+  if(spaceBelow>120){drop.style.top=(rect.bottom+2)+'px';drop.style.bottom='';}
+  else{drop.style.bottom=(window.innerHeight-rect.top+2)+'px';drop.style.top='';}
+  const items=Object.entries(DL);
+  const fil=q?items.filter(([k,v])=>v.toLowerCase().includes(q.toLowerCase())):items;
+  let h='<div ontouchend="elegirDxInput(\''+campo+'\',\'\',\'\')" onclick="elegirDxInput(\''+campo+'\',\'\',\'\')" style="padding:12px 14px;border-bottom:1px solid var(--bd);color:var(--mt);font-size:13px">— Sin asignar —</div>';
+  h+=fil.map(([k,v])=>'<div ontouchend="elegirDxInput(\''+campo+'\',\''+k+'\',\''+v+'\')" onclick="elegirDxInput(\''+campo+'\',\''+k+'\',\''+v+'\')" style="padding:12px 14px;border-bottom:1px solid var(--bd);font-size:13px;color:var(--tx)">'+v+'</div>').join('');
+  if(q&&!fil.length)
+    h+='<div ontouchend="elegirDxInput(\''+campo+'\',\'__libre__\',\''+q+'\')" onclick="elegirDxInput(\''+campo+'\',\'__libre__\',\''+q+'\')" style="padding:12px 14px;font-size:13px;color:var(--ac)">✏️ Guardar &quot;'+q+'&quot;</div>';
+  h+='<div ontouchend="dxEscribirLibre(\''+campo+'\')" onclick="dxEscribirLibre(\''+campo+'\')" style="padding:12px 14px;font-size:13px;color:var(--mt2);border-top:1px solid var(--bd)">✏️ Escribir diagnóstico propio...</div>';
+  drop.innerHTML=h;
+  drop.style.display='block';
+}
+function elegirDxInput(campo,key,label){
+  const val=key==='__libre__'?label:key;
+  document.getElementById('pat-dx-'+campo).value=val;
+  document.getElementById('pat-dx-'+campo+'-txt').value=key==='__libre__'?label:(DL[key]||label);
+  document.getElementById('dx-drop-'+campo).style.display='none';
+}
+function dxEscribirLibre(campo){
+  document.getElementById('dx-drop-'+campo).style.display='none';
+  const inp=document.getElementById('pat-dx-'+campo+'-txt');
+  inp.value='';inp.placeholder='Escribí el diagnóstico...';inp.focus();
+}
+document.addEventListener('touchstart',function(e){
+  ['propio','ia'].forEach(function(c){
+    const drop=document.getElementById('dx-drop-'+c);
+    const inp=document.getElementById('pat-dx-'+c+'-txt');
+    if(drop&&inp&&!drop.contains(e.target)&&e.target!==inp) drop.style.display='none';
+  });
+},{passive:true});
 function openNewPat(){
   document.getElementById('pat-mod-ttl').textContent='Nuevo paciente';
   document.getElementById('pat-id').value='';
-  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts('');
-  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts('');
+  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds','pat-dx-propio','pat-dx-ia','pat-dx-propio-txt','pat-dx-ia-txt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('ov-pat').classList.remove('h');  setTimeout(()=>document.getElementById('pat-nombre').focus(),80);
 }
 function openEditPat(id){
@@ -1356,17 +1406,24 @@ function openEditPat(id){
   document.getElementById('pat-antec').value=p.antecedentes||'';
   document.getElementById('pat-meds').value=p.medicacion_actual||'';
   buildDxDatalist();
-  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||'');
+  document.getElementById('pat-dx-propio').value=p.dx_propio||'';
+  document.getElementById('pat-dx-propio-txt').value=DL[p.dx_propio]||p.dx_propio||'';
   const libreEl=document.getElementById('pat-dx-libre');if(libreEl)libreEl.style.display='none';
-  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||'');
+  const dxIVal=p.dx_ia||p.diagnostico||'';
+  document.getElementById('pat-dx-ia').value=dxIVal;
+  document.getElementById('pat-dx-ia-txt').value=DL[dxIVal]||dxIVal||'';
   document.getElementById('ov-pat').classList.remove('h');
 }
 function savePat(){
   const id=document.getElementById('pat-id').value;
   const nombre=document.getElementById('pat-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio');return;}
-  const dxP=document.getElementById('pat-dx-propio').value;
-  const dxI=document.getElementById('pat-dx-ia').value;
+  const dxPTxt=document.getElementById('pat-dx-propio-txt').value.trim();
+  const dxITxt=document.getElementById('pat-dx-ia-txt').value.trim();
+  // Buscar si el texto ingresado corresponde a una key del DL
+  const findKey=txt=>{if(!txt)return '';const f=Object.entries(DL).find(([k,v])=>v===txt);return f?f[0]:txt;};
+  const dxP=document.getElementById('pat-dx-propio').value||findKey(dxPTxt);
+  const dxI=document.getElementById('pat-dx-ia').value||findKey(dxITxt);
   const notaTxt=document.getElementById('pat-notas').value.trim();
   const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
@@ -2670,6 +2727,9 @@ window.addEventListener('load', function(){
     </div>
   </div>
 </div>
+
+<div id="dx-drop-propio" style="display:none;position:fixed;background:var(--bg);border:1.5px solid var(--ac);border-radius:var(--rs);z-index:9000;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+<div id="dx-drop-ia" style="display:none;position:fixed;background:var(--bg);border:1.5px solid var(--ac);border-radius:var(--rs);z-index:9000;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
 
 <div id="img-ov" style="display:none" class="img-overlay">
   <button class="img-overlay-close" onclick="clsImgOv()">✕</button>
