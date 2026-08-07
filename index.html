@@ -937,7 +937,9 @@ function renderSlot(dkk,hora,tipo,a,adHoc){
     const esReservado=a.reservado;
     const sinReg=!a.pacienteId&&!esReservado;
     const color=esReservado?'var(--am)':(sinReg?'var(--mt)':'var(--tx)');
-    pacHtml='<div class="apac" style="color:'+color+'"><strong>'+(adHoc?'⚡ ':'')+a.pacienteNombre+'</strong>'
+    pacHtml='<div class="apac" style="color:'+color+'">'
+      +(a.pacienteId?'<strong style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px" onclick="showPt(\''+a.pacienteId+'\');sv(\'detail\')">':('' +'<strong>'))
+      +(adHoc?'⚡ ':'')+a.pacienteNombre+'</strong>'
       +(sinReg?' <span style="font-size:10px;color:var(--mt2)">(sin registrar)</span>':'')
       +(a.motivo?' · <span style="color:var(--mt2);font-size:12px">'+a.motivo+'</span>':'')+'</div>';
     const tipoIngreso=tipo==='video'?'video':'presencial';
