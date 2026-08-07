@@ -212,7 +212,7 @@ select option{background:var(--bg)}
 .img-thumb{aspect-ratio:1;border-radius:var(--rs);overflow:hidden;background:var(--sf2);cursor:pointer;position:relative;border:1px solid var(--bd)}
 .img-thumb img{width:100%;height:100%;object-fit:cover}
 .img-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);border:none;color:#fff;border-radius:4px;font-size:10px;padding:2px 5px;cursor:pointer}
-.img-add-btn{aspect-ratio:1;border-radius:var(--rs);border:2px dashed var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--mt2);font-size:10px;gap:3px;transition:all .15s;background:none;width:100%}
+.img-add-btn{border-radius:var(--rs);border:1.5px dashed var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mt);font-size:12px;gap:6px;transition:all .15s;background:none;padding:7px 14px;margin-top:6px;width:100%}
 .img-add-btn:hover{border-color:var(--ac);color:var(--ac)}
 .img-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;cursor:pointer}
 .img-overlay img{max-width:100%;max-height:90vh;border-radius:var(--rs);object-fit:contain;pointer-events:none}
@@ -509,7 +509,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   </div>
 </div>
 
-<div class="ov h" id="ov-pat">
+<div class="ov h" id="ov-pat" onclick="clsOv('ov-pat',event)">
   <div class="mod">
     <div class="mod-ttl" id="pat-mod-ttl">Nuevo paciente</div>
     <input type="hidden" id="pat-id">
@@ -525,11 +525,10 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <label>Email</label><input type="text" id="pat-email" placeholder="correo@ejemplo.com">
     <label>Dirección</label><input type="text" id="pat-dir" placeholder="Calle, número, ciudad...">
     <label>Tu diagnóstico (criterio propio)</label>
-    <input type="text" id="pat-dx-propio-txt" placeholder="Ej: Migraña, Parkinson, Alzheimer...">
-    <input type="hidden" id="pat-dx-propio">
+    <select id="pat-dx-propio" onchange="toggleDxLibre(this.value)"><option value="">-- Sin asignar --</option></select>
+    <input type="text" id="pat-dx-libre" placeholder="Escribí el diagnóstico..." style="display:none;margin-top:6px">
     <label>Diagnóstico inferido por IA</label>
-    <input type="text" id="pat-dx-ia-txt" placeholder="Ej: Migraña, Parkinson, Alzheimer...">
-    <input type="hidden" id="pat-dx-ia">
+    <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
     <label>Antecedentes</label>
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
     <label>Medicación actual</label>
@@ -678,7 +677,7 @@ function finSavePass(){
   ['fin-cp-old','fin-cp-new','fin-cp-conf'].forEach(id=>document.getElementById(id).value='');
   toast('✓ Contraseña actualizada');
 }
-function clsOv(id,e){if(e&&e.target===document.getElementById(id)&&!e.target.closest('.mod'))document.getElementById(id).classList.add('h');}
+function clsOv(id,e){if(e&&e.target===document.getElementById(id))document.getElementById(id).classList.add('h');}
 
 function enviarWA(id){
   const p=getPat(id);if(!p)return;
@@ -1336,10 +1335,16 @@ function elegirDx(campo,key,label){
 function buildDxOpts(sel){
   let o='<option value="">-- Sin asignar --</option>';
   Object.entries(DL).forEach(([k,v])=>{o+='<option value="'+k+'"'+(sel===k?' selected':'')+'>'+v+'</option>';});
+  o+='<option value="__libre__"'+(sel&&!DL[sel]&&sel!==''?' selected':'')+'>✏️ Otro (escribir)...</option>';
   return o;
 }
 function buildDxDatalist(){}
-function toggleDxLibre(){}
+function toggleDxLibre(val){
+  const libre=document.getElementById('pat-dx-libre');
+  if(!libre)return;
+  if(val==='__libre__'){libre.style.display='';libre.focus();}
+  else{libre.style.display='none';}
+}
 
 function mostrarDxList(campo,inp){
   filtrarDxList(campo,'',inp||document.getElementById('pat-dx-'+campo+'-txt'));
@@ -1384,7 +1389,7 @@ document.addEventListener('touchstart',function(e){
 function openNewPat(){
   document.getElementById('pat-mod-ttl').textContent='Nuevo paciente';
   document.getElementById('pat-id').value='';
-  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds','pat-dx-propio','pat-dx-ia','pat-dx-propio-txt','pat-dx-ia-txt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(''); document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(''); const lEl=document.getElementById('pat-dx-libre');if(lEl){lEl.style.display='none';lEl.value='';}
   document.getElementById('ov-pat').classList.remove('h');  setTimeout(()=>document.getElementById('pat-nombre').focus(),80);
 }
 function openEditPat(id){
@@ -1402,24 +1407,19 @@ function openEditPat(id){
   document.getElementById('pat-antec').value=p.antecedentes||'';
   document.getElementById('pat-meds').value=p.medicacion_actual||'';
   buildDxDatalist();
-  document.getElementById('pat-dx-propio').value=p.dx_propio||'';
-  document.getElementById('pat-dx-propio-txt').value=DL[p.dx_propio]||p.dx_propio||'';
-  const libreEl=document.getElementById('pat-dx-libre');if(libreEl)libreEl.style.display='none';
-  const dxIVal=p.dx_ia||p.diagnostico||'';
-  document.getElementById('pat-dx-ia').value=dxIVal;
-  document.getElementById('pat-dx-ia-txt').value=DL[dxIVal]||dxIVal||'';
+  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||"");
+  const libreEl=document.getElementById('pat-dx-libre');
+  if(libreEl){if(p.dx_propio&&!DL[p.dx_propio]){libreEl.style.display="";libreEl.value=p.dx_propio;}else{libreEl.style.display="none";libreEl.value="";}}
+  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||"");
   document.getElementById('ov-pat').classList.remove('h');
 }
 function savePat(){
   const id=document.getElementById('pat-id').value;
   const nombre=document.getElementById('pat-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio');return;}
-  const dxPTxt=document.getElementById('pat-dx-propio-txt').value.trim();
-  const dxITxt=document.getElementById('pat-dx-ia-txt').value.trim();
-  // Buscar si el texto ingresado corresponde a una key del DL
-  const findKey=txt=>{if(!txt)return '';const f=Object.entries(DL).find(([k,v])=>v===txt);return f?f[0]:txt;};
-  const dxP=document.getElementById('pat-dx-propio').value||findKey(dxPTxt);
-  const dxI=document.getElementById('pat-dx-ia').value||findKey(dxITxt);
+  const dxPRaw=document.getElementById('pat-dx-propio').value;
+  const dxP=dxPRaw==='__libre__'?(document.getElementById('pat-dx-libre')?.value.trim()||''):dxPRaw;
+  const dxI=document.getElementById('pat-dx-ia').value;
   const notaTxt=document.getElementById('pat-notas').value.trim();
   const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
@@ -1576,10 +1576,13 @@ function renderImgs(pacId){
   });
   const addBtn=document.createElement('button');
   addBtn.className='img-add-btn';
-  addBtn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Subir';
+  addBtn.innerHTML='<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Subir imagen';
   addBtn.onclick=function(){addImgFromFile(pacId);};
-  wrap.appendChild(addBtn);
-  return wrap;
+  // Botón debajo del grid, no dentro
+  const container=document.createElement('div');
+  container.appendChild(wrap);
+  container.appendChild(addBtn);
+  return container;
 }
 
 function clsImgOv(){document.getElementById("img-ov").style.display="none";if(window._imgOvReset)window._imgOvReset();}
@@ -1724,31 +1727,19 @@ function showPt(id){
   // Próxima consulta + WhatsApp
   const proxBox=ce('div');proxBox.style.cssText='background:var(--sf2);border:1px solid rgba(176,107,255,.25);border-radius:var(--rs);padding:10px 13px;margin-bottom:10px';
   const proxVal=nextApps[id]||'';
-  const estudiosVal=(patEdits[id]?.estudios_solicitados)||p.estudios_solicitados||'';
-  const proxRow=ce('div');proxRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px';
+  const proxRow=ce('div');proxRow.style.cssText='display:flex;align-items:center;justify-content:space-between';
   const proxTxt=ce('div');proxTxt.innerHTML='<span style="font-size:10px;font-weight:600;color:var(--mt2);text-transform:uppercase;letter-spacing:.5px">Próxima consulta</span><br>'
     +'<span style="font-size:14px;font-weight:600;color:'+(proxVal?'var(--ac)':'var(--mt2)')+'">'+( proxVal||'Sin fecha asignada')+'</span>';
   const proxBtns=ce('div');proxBtns.style.cssText='display:flex;gap:6px';
   const proxBtn=ce('button','edit-btn');proxBtn.textContent=proxVal?'✎':'+ Fecha';
   proxBtn.onclick=function(){setNextApp(id);};
   proxBtns.appendChild(proxBtn);
-  // Botón WhatsApp (solo si hay fecha o teléfono)
-  const tel=p.telefono||'';
   const waBtnWrap=ce('button');
   waBtnWrap.style.cssText='background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer';
   waBtnWrap.textContent='WhatsApp';
   waBtnWrap.onclick=function(){enviarWA(id);};
   proxBtns.appendChild(waBtnWrap);
   proxRow.appendChild(proxTxt);proxRow.appendChild(proxBtns);proxBox.appendChild(proxRow);
-  // Estudios solicitados
-  const estRow=ce('div');estRow.style.cssText='border-top:1px solid var(--bd);padding-top:8px;margin-top:4px';
-  const estLbl=ce('div');estLbl.style.cssText='font-size:10px;font-weight:600;color:var(--mt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px';
-  estLbl.textContent='Estudios solicitados';
-  const estVal=ce('div');estVal.id='fv_estudios_solicitados_'+id;
-  estVal.style.cssText='font-size:13px;color:'+(estudiosVal?'var(--tx)':'var(--mt)')+';cursor:pointer';
-  estVal.textContent=estudiosVal||'Ninguno — tocá para agregar';
-  estVal.onclick=function(){editField(id,'estudios_solicitados','Estudios solicitados',true);};
-  estRow.appendChild(estLbl);estRow.appendChild(estVal);proxBox.appendChild(estRow);
   proxBox.appendChild(proxRow);
   det.appendChild(proxBox);
   const st4=ce('div','stitle');st4.textContent='Nueva consulta';det.appendChild(st4);
