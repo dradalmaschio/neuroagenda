@@ -514,7 +514,12 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <div class="mod-ttl" id="pat-mod-ttl">Nuevo paciente</div>
     <input type="hidden" id="pat-id">
     <label>Nombre y apellido *</label><input type="text" id="pat-nombre" placeholder="Apellido, Nombre">
-    <div class="form-row" style="margin-top:0">
+    <label>Tu diagnóstico (criterio propio)</label>
+    <select id="pat-dx-propio" onchange="toggleDxLibre(this.value)"><option value="">-- Sin asignar --</option></select>
+    <input type="text" id="pat-dx-libre" placeholder="Escribí el diagnóstico..." style="display:none;margin-top:6px">
+    <label>Diagnóstico inferido por IA</label>
+    <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
+    <div class="form-row" style="margin-top:10px">
       <div><label>DNI</label><input type="text" id="pat-dni" placeholder="12345678"></div>
       <div><label>Fecha de nacimiento</label><input type="text" id="pat-fnac" placeholder="dd/mm/aaaa"></div>
     </div>
@@ -524,11 +529,6 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     </div>
     <label>Email</label><input type="text" id="pat-email" placeholder="correo@ejemplo.com">
     <label>Dirección</label><input type="text" id="pat-dir" placeholder="Calle, número, ciudad...">
-    <label>Tu diagnóstico (criterio propio)</label>
-    <select id="pat-dx-propio" onchange="toggleDxLibre(this.value)"><option value="">-- Sin asignar --</option></select>
-    <input type="text" id="pat-dx-libre" placeholder="Escribí el diagnóstico..." style="display:none;margin-top:6px">
-    <label>Diagnóstico inferido por IA</label>
-    <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
     <label>Antecedentes</label>
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
     <label>Medicación actual</label>
