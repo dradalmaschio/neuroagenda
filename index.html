@@ -59,7 +59,7 @@ input[type=search]{padding:10px 10px 10px 36px}
 input[type=text],input[type=number]{padding:9px 11px}
 input:focus,textarea:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(176,107,255,.2)}
 input::placeholder,textarea::placeholder{color:var(--mt2)}
-select{padding:9px 11px;cursor:pointer;-webkit-appearance:none}
+select{padding:9px 11px;cursor:pointer}
 select option{background:var(--bg)}
 .pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-bottom:12px}
 .pills::-webkit-scrollbar{display:none}
@@ -372,6 +372,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   <div id="ag"></div>
 </div>
 
+
 <div id="view-fin" class="view">
   <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
     <button onclick="document.getElementById('fin-chpass-ov').style.display='flex'" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer;padding:4px 0">🔐 Cambiar contraseña</button>
@@ -515,10 +516,9 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <div class="mod-ttl" id="pat-mod-ttl">Nuevo paciente</div>
     <input type="hidden" id="pat-id">
     <label>Nombre y apellido *</label><input type="text" id="pat-nombre" placeholder="Apellido, Nombre">
-    <label>Tu diagnóstico (criterio propio)</label>
-    <select id="pat-dx-propio" onchange="toggleDxLibre(this.value)"><option value="">-- Sin asignar --</option></select>
-    <input type="text" id="pat-dx-libre" placeholder="Escribí el diagnóstico..." style="display:none;margin-top:6px">
-    <label>Diagnóstico inferido por IA</label>
+    <label>Tu diagnóstico</label>
+    <select id="pat-dx-propio"><option value="">-- Sin asignar --</option></select>
+    <label>Diagnóstico IA</label>
     <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
     <div class="form-row" style="margin-top:10px">
       <div><label>DNI</label><input type="text" id="pat-dni" placeholder="12345678"></div>
@@ -1333,6 +1333,7 @@ function elegirDx(campo,key,label){
   document.getElementById('dx-picker-ov').style.display='none';
 }
 
+let _dxCampo='';
 function buildDxOpts(sel){
   let o='<option value="">-- Sin asignar --</option>';
   Object.entries(DL).forEach(([k,v])=>{o+='<option value="'+k+'"'+(sel===k?' selected':'')+'>'+v+'</option>';});
@@ -1340,46 +1341,48 @@ function buildDxOpts(sel){
   return o;
 }
 function buildDxDatalist(){}
+function abrirVistaDx(campo){
+  _dxCampo=campo;
+  document.getElementById('ov-pat').classList.add('h');
+  document.getElementById('dx-view-ttl').textContent=campo==='propio'?'Tu diagn\u00f3stico':'Diagn\u00f3stico IA';
+  document.getElementById('dx-view-search').value='';
+  filtrarVistaDs('');
+  sv('dx');
+}
+function filtrarVistaDs(q){
+  const lista=document.getElementById('dx-view-lista');
+  const fil=q?Object.entries(DL).filter(function(e){return e[1].toLowerCase().includes(q.toLowerCase());}):Object.entries(DL);
+  let h='<div onclick="elegirVistaDx(\'\',\'-- Sin asignar --\')" style="padding:16px 0;border-bottom:1px solid var(--bd);color:var(--mt);font-size:16px;cursor:pointer">\u2014 Sin asignar \u2014</div>';
+  fil.forEach(function(e){h+='<div onclick="elegirVistaDx(\''+e[0]+'\',\''+e[1]+'\')" style="padding:16px 0;border-bottom:1px solid var(--bd);font-size:16px;color:var(--tx);cursor:pointer">'+e[1]+'</div>';});
+  h+='<div onclick="dxLibreVista()" style="padding:16px 0;font-size:16px;color:var(--ac);cursor:pointer">\u270f\ufe0f Escribir diagn\u00f3stico propio...</div>';
+  lista.innerHTML=h;
+}
+function elegirVistaDx(key,label){
+  document.getElementById('pat-dx-'+_dxCampo).value=key;
+  const lbl=document.getElementById('lbl-dx-'+_dxCampo);
+  if(lbl){lbl.textContent=label;lbl.style.color=key?'var(--tx)':'var(--mt)';}
+  document.getElementById('ov-pat').classList.remove('h');
+  sv('detail');
+}
+function dxLibreVista(){
+  document.getElementById('pat-dx-'+_dxCampo).value='__libre__';
+  const lbl=document.getElementById('lbl-dx-'+_dxCampo);
+  if(lbl){lbl.textContent='\u270f\ufe0f Escribir...';lbl.style.color='var(--ac)';}
+  document.getElementById('ov-pat').classList.remove('h');
+  sv('detail');
+  setTimeout(function(){const l=document.getElementById('pat-dx-libre');if(l){l.style.display='';l.focus();}},200);
+}
 function toggleDxLibre(val){
   const libre=document.getElementById('pat-dx-libre');
   if(!libre)return;
   if(val==='__libre__'){libre.style.display='';libre.focus();}
-  else{libre.style.display='none';}
+  else libre.style.display='none';
 }
 
-function mostrarDxList(campo,inp){
-  filtrarDxList(campo,'',inp||document.getElementById('pat-dx-'+campo+'-txt'));
-}
-function filtrarDxList(campo,q,inp){
-  const drop=document.getElementById('dx-drop-'+campo);
-  if(!inp)inp=document.getElementById('pat-dx-'+campo+'-txt');
-  const rect=inp.getBoundingClientRect();
-  drop.style.left=rect.left+'px';
-  drop.style.width=rect.width+'px';
-  const spaceBelow=window.innerHeight-rect.bottom;
-  if(spaceBelow>120){drop.style.top=(rect.bottom+2)+'px';drop.style.bottom='';}
-  else{drop.style.bottom=(window.innerHeight-rect.top+2)+'px';drop.style.top='';}
-  const items=Object.entries(DL);
-  const fil=q?items.filter(([k,v])=>v.toLowerCase().includes(q.toLowerCase())):items;
-  let h='<div ontouchend="elegirDxInput(\''+campo+'\',\'\',\'\')" onclick="elegirDxInput(\''+campo+'\',\'\',\'\')" style="padding:12px 14px;border-bottom:1px solid var(--bd);color:var(--mt);font-size:13px">— Sin asignar —</div>';
-  h+=fil.map(([k,v])=>'<div ontouchend="elegirDxInput(\''+campo+'\',\''+k+'\',\''+v+'\')" onclick="elegirDxInput(\''+campo+'\',\''+k+'\',\''+v+'\')" style="padding:12px 14px;border-bottom:1px solid var(--bd);font-size:13px;color:var(--tx)">'+v+'</div>').join('');
-  if(q&&!fil.length)
-    h+='<div ontouchend="elegirDxInput(\''+campo+'\',\'__libre__\',\''+q+'\')" onclick="elegirDxInput(\''+campo+'\',\'__libre__\',\''+q+'\')" style="padding:12px 14px;font-size:13px;color:var(--ac)">✏️ Guardar &quot;'+q+'&quot;</div>';
-  h+='<div ontouchend="dxEscribirLibre(\''+campo+'\')" onclick="dxEscribirLibre(\''+campo+'\')" style="padding:12px 14px;font-size:13px;color:var(--mt2);border-top:1px solid var(--bd)">✏️ Escribir diagnóstico propio...</div>';
-  drop.innerHTML=h;
-  drop.style.display='block';
-}
-function elegirDxInput(campo,key,label){
-  const val=key==='__libre__'?label:key;
-  document.getElementById('pat-dx-'+campo).value=val;
-  document.getElementById('pat-dx-'+campo+'-txt').value=key==='__libre__'?label:(DL[key]||label);
-  document.getElementById('dx-drop-'+campo).style.display='none';
-}
-function dxEscribirLibre(campo){
-  document.getElementById('dx-drop-'+campo).style.display='none';
-  const inp=document.getElementById('pat-dx-'+campo+'-txt');
-  inp.value='';inp.placeholder='Escribí el diagnóstico...';inp.focus();
-}
+
+
+
+
 document.addEventListener('touchstart',function(e){
   ['propio','ia'].forEach(function(c){
     const drop=document.getElementById('dx-drop-'+c);
@@ -1390,7 +1393,7 @@ document.addEventListener('touchstart',function(e){
 function openNewPat(){
   document.getElementById('pat-mod-ttl').textContent='Nuevo paciente';
   document.getElementById('pat-id').value='';
-  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(''); document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(''); const lEl=document.getElementById('pat-dx-libre');if(lEl){lEl.style.display='none';lEl.value='';}
+  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(''); document.getElementById('pat-dx-ia').innerHTML=buildDxOpts('');
   document.getElementById('ov-pat').classList.remove('h');  setTimeout(()=>document.getElementById('pat-nombre').focus(),80);
 }
 function openEditPat(id){
@@ -1407,11 +1410,10 @@ function openEditPat(id){
   document.getElementById('pat-notas').value='';
   document.getElementById('pat-antec').value=p.antecedentes||'';
   document.getElementById('pat-meds').value=p.medicacion_actual||'';
-  buildDxDatalist();
-  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||"");
-  const libreEl=document.getElementById('pat-dx-libre');
-  if(libreEl){if(p.dx_propio&&!DL[p.dx_propio]){libreEl.style.display="";libreEl.value=p.dx_propio;}else{libreEl.style.display="none";libreEl.value="";}}
-  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||"");
+  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||'');
+  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||'');
+  const dxIVal=p.dx_ia||p.diagnostico||"";
+  const btnI=document.getElementById('btn-dx-ia');if(btnI)btnI.textContent=DL[dxIVal]||'-- Sin asignar --';
   document.getElementById('ov-pat').classList.remove('h');
 }
 function savePat(){
@@ -1420,7 +1422,7 @@ function savePat(){
   if(!nombre){alert('El nombre es obligatorio');return;}
   const dxPRaw=document.getElementById('pat-dx-propio').value;
   const dxP=dxPRaw==='__libre__'?(document.getElementById('pat-dx-libre')?.value.trim()||''):dxPRaw;
-  const dxI=document.getElementById('pat-dx-ia').value;
+  const dxI=document.getElementById('pat-dx-ia').value||'';
   const notaTxt=document.getElementById('pat-notas').value.trim();
   const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
@@ -2718,6 +2720,13 @@ window.addEventListener('load', function(){
 
 <div id="dx-drop-propio" style="display:none;position:fixed;background:var(--bg);border:1.5px solid var(--ac);border-radius:var(--rs);z-index:9000;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
 <div id="dx-drop-ia" style="display:none;position:fixed;background:var(--bg);border:1.5px solid var(--ac);border-radius:var(--rs);z-index:9000;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+
+<div id="dx-panel" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6)" onclick="this.style.display='none'">
+  <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:18px 18px 0 0;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="padding:14px 16px;font-size:13px;font-weight:700;color:var(--mt);border-bottom:1px solid var(--bd)" id="dx-panel-ttl">Seleccioná un diagnóstico</div>
+    <div id="dx-panel-lista"></div>
+  </div>
+</div>
 
 <div id="img-ov" style="display:none" class="img-overlay">
   <button class="img-overlay-close" onclick="clsImgOv()">✕</button>
