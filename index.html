@@ -516,10 +516,9 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <div class="mod-ttl" id="pat-mod-ttl">Nuevo paciente</div>
     <input type="hidden" id="pat-id">
     <label>Nombre y apellido *</label><input type="text" id="pat-nombre" placeholder="Apellido, Nombre">
-    <label>Tu diagnóstico</label>
-    <select id="pat-dx-propio"><option value="">-- Sin asignar --</option></select>
-    <label>Diagnóstico IA</label>
-    <select id="pat-dx-ia"><option value="">-- Sin asignar --</option></select>
+    <label>Diagnóstico</label>
+    <input type="text" id="pat-dx-propio" placeholder="Ej: Migraña, Parkinson, Alzheimer..." list="dx-sugerencias" autocomplete="off">
+    <datalist id="dx-sugerencias"></datalist>
     <div class="form-row" style="margin-top:10px">
       <div><label>DNI</label><input type="text" id="pat-dni" placeholder="12345678"></div>
       <div><label>Fecha de nacimiento</label><input type="text" id="pat-fnac" placeholder="dd/mm/aaaa"></div>
@@ -1393,7 +1392,7 @@ document.addEventListener('touchstart',function(e){
 function openNewPat(){
   document.getElementById('pat-mod-ttl').textContent='Nuevo paciente';
   document.getElementById('pat-id').value='';
-  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(''); document.getElementById('pat-dx-ia').innerHTML=buildDxOpts('');
+  ['pat-nombre','pat-dni','pat-fnac','pat-cob','pat-tel','pat-email','pat-dir','pat-notas','pat-antec','pat-meds'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('pat-dx-propio').value='';
   document.getElementById('ov-pat').classList.remove('h');  setTimeout(()=>document.getElementById('pat-nombre').focus(),80);
 }
 function openEditPat(id){
@@ -1410,8 +1409,8 @@ function openEditPat(id){
   document.getElementById('pat-notas').value='';
   document.getElementById('pat-antec').value=p.antecedentes||'';
   document.getElementById('pat-meds').value=p.medicacion_actual||'';
-  document.getElementById('pat-dx-propio').innerHTML=buildDxOpts(p.dx_propio||'');
-  document.getElementById('pat-dx-ia').innerHTML=buildDxOpts(p.dx_ia||p.diagnostico||'');
+  const _dxv=p.dx_propio||(DL[p.dx_ia]||p.dx_ia)||(DL[p.diagnostico]||p.diagnostico)||''; document.getElementById('pat-dx-propio').value=DL[_dxv]||_dxv||'';
+  const _dl=document.getElementById('dx-sugerencias');if(_dl)_dl.innerHTML=Object.values(DL).map(v=>'<option value="'+v+'">').join('');
   const dxIVal=p.dx_ia||p.diagnostico||"";
   const btnI=document.getElementById('btn-dx-ia');if(btnI)btnI.textContent=DL[dxIVal]||'-- Sin asignar --';
   document.getElementById('ov-pat').classList.remove('h');
@@ -1420,9 +1419,10 @@ function savePat(){
   const id=document.getElementById('pat-id').value;
   const nombre=document.getElementById('pat-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio');return;}
-  const dxPRaw=document.getElementById('pat-dx-propio').value;
-  const dxP=dxPRaw==='__libre__'?(document.getElementById('pat-dx-libre')?.value.trim()||''):dxPRaw;
-  const dxI=document.getElementById('pat-dx-ia').value||'';
+  const dxPTxt=document.getElementById('pat-dx-propio').value.trim();
+  const found=Object.entries(DL).find(([k,v])=>v.toLowerCase()===dxPTxt.toLowerCase());
+  const dxP=found?found[0]:dxPTxt;
+  const dxI='';
   const notaTxt=document.getElementById('pat-notas').value.trim();
   const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
