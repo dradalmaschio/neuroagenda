@@ -516,9 +516,6 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <div class="mod-ttl" id="pat-mod-ttl">Nuevo paciente</div>
     <input type="hidden" id="pat-id">
     <label>Nombre y apellido *</label><input type="text" id="pat-nombre" placeholder="Apellido, Nombre">
-    <label>Diagnóstico</label>
-    <input type="text" id="pat-dx-propio" placeholder="Ej: Migraña, Parkinson, Alzheimer..." list="dx-sugerencias" autocomplete="off">
-    <datalist id="dx-sugerencias"></datalist>
     <div class="form-row" style="margin-top:10px">
       <div><label>DNI</label><input type="text" id="pat-dni" placeholder="12345678"></div>
       <div><label>Fecha de nacimiento</label><input type="text" id="pat-fnac" placeholder="dd/mm/aaaa"></div>
@@ -535,6 +532,9 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <textarea id="pat-meds" placeholder="Medicación habitual..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
     <label>Notas iniciales</label>
     <textarea id="pat-notas" placeholder="Motivo de consulta, antecedentes..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
+    <label>Diagnóstico</label>
+    <input type="text" id="pat-dx-propio" placeholder="Ej: Migraña, Parkinson, Alzheimer..." list="dx-sugerencias" autocomplete="off">
+    <datalist id="dx-sugerencias"></datalist>
     <div class="mod-btns">
       <button class="bcancel" onclick="document.getElementById('ov-pat').classList.add('h')">Cancelar</button>
       <button class="bconf" onclick="savePat()">Guardar</button>
