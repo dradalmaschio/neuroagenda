@@ -2344,6 +2344,7 @@ function checkTurnosProximos(){
 
 buildHome();buildPills();rpts();buildAg();buildStats();renderFin();
 initNotifs();
+(function(){const dl=document.getElementById('dx-sugerencias');if(dl)dl.innerHTML=Object.values(DL).map(function(v){return'<option value="'+v+'">';}).join('');})();
 setInterval(checkTurnosProximos,60000);
 checkTurnosProximos();
 
