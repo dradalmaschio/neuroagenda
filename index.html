@@ -351,12 +351,12 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <button class="back" style="margin-bottom:0" onclick="sv('pacs')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Volver
     </button>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="btns" onclick="openEditPat(currentPatId)">✎ Editar paciente</button>
-      <button onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)44;color:var(--rd);font-size:11px;padding:5px 10px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar</button>
-    </div>
+    <button class="btns" onclick="openEditPat(currentPatId)">✎ Editar paciente</button>
   </div>
   <div id="det"></div>
+  <div style="margin-top:24px;padding-top:16px;border-top:1px dashed var(--bd);text-align:center">
+    <button onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)55;color:var(--rd);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar paciente</button>
+  </div>
 </div>
 
 <div id="view-agenda" class="view">
