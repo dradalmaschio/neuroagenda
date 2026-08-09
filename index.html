@@ -448,7 +448,17 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   <div id="dx-panel"></div>
 </div>
 
-<div id="view-stats" class="view"><div id="stcont"></div></div>
+<div id="view-stats" class="view">
+  <div style="padding:4px 0 14px">
+    <div class="sec-ttl">Reportes de pacientes</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <button class="btnp" onclick="generarReporte('2026')">📋 Pacientes atendidos en 2026 con diagnóstico</button>
+      <button class="btnp" style="background:var(--grad2)" onclick="generarReporte('acv2025')">📋 ACV / Demencia vascular / Mixta en 2025</button>
+    </div>
+    <div id="reporte-resultado"></div>
+  </div>
+  <div id="stcont"></div>
+</div>
 
 <div id="view-ia" class="view">
   <div class="iahd">
@@ -2259,6 +2269,85 @@ function finShowDet(key){
     });
   }
   panel.innerHTML='<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:10px">'+html+'</div>';
+}
+
+function generarReporte(tipo){
+  const cont=document.getElementById('reporte-resultado');
+  cont.innerHTML='<div style="color:var(--mt);font-size:13px;padding:10px 0">Generando...</div>';
+
+  // Recolectar pacientes que tuvieron actividad (notas, turnos o cobros)
+  function parseAnio(fecha){
+    if(!fecha)return null;
+    const p=fecha.split('/');
+    if(p.length>=3)return parseInt(p[2]);
+    // formato "15 DE ENERO DE 2025"
+    const m=fecha.match(/\b(20\d\d)\b/);
+    return m?parseInt(m[1]):null;
+  }
+
+  const pacientesIds=new Set();
+  // Desde notas
+  Object.entries(notas2).forEach(([pid,notas])=>{
+    notas.forEach(n=>{
+      const a=parseAnio(n.fecha);
+      if(tipo==='2026'&&a===2026) pacientesIds.add(pid);
+      if(tipo==='acv2025'&&a===2025) pacientesIds.add(pid);
+    });
+  });
+  // Desde turnos
+  Object.entries(turnos).forEach(([dk,slots])=>{
+    const a=parseInt((dk||'').split('-')[0]);
+    Object.values(slots).forEach(t=>{
+      if(!t||!t.pacienteId)return;
+      if(tipo==='2026'&&a===2026) pacientesIds.add(t.pacienteId);
+      if(tipo==='acv2025'&&a===2025) pacientesIds.add(t.pacienteId);
+    });
+  });
+  // Desde cobros
+  cobros.forEach(c=>{
+    if(!c.pacienteId)return;
+    const a=parseAnio(c.fecha);
+    if(tipo==='2026'&&a===2026) pacientesIds.add(c.pacienteId);
+    if(tipo==='acv2025'&&a===2025) pacientesIds.add(c.pacienteId);
+  });
+
+  const dxFiltro=['acv_isquemico','demencia_vascular','demencia_mixta'];
+
+  const resultados=[];
+  pacientesIds.forEach(pid=>{
+    const p=getPat(pid);if(!p)return;
+    const dx=p.dx_propio||p.dx_ia||p.diagnostico||'';
+    const dxLabel=DL[dx]||dx||'Sin diagnóstico';
+    if(tipo==='acv2025'&&!dxFiltro.includes(dx))return;
+    resultados.push({pid,nombre:p.nombre,dx:dxLabel,cobertura:p.cobertura||'',proxima:nextApps[pid]||''});
+  });
+
+  resultados.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  if(!resultados.length){
+    cont.innerHTML='<div style="color:var(--mt);font-size:14px;padding:16px 0">Sin resultados encontrados.</div>';
+    return;
+  }
+
+  const titulo=tipo==='2026'
+    ?'Pacientes atendidos en 2026 ('+resultados.length+')'
+    :'ACV isquémico / Demencia vascular / Mixta — 2025 ('+resultados.length+')';
+
+  let html='<div style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:10px">'+titulo+'</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:6px">';
+  resultados.forEach(r=>{
+    html+='<div onclick="showPt(\''+r.pid+'\');sv(\'detail\')" style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+      +'<div>'
+      +'<div style="font-size:13px;font-weight:600">'+r.nombre+'</div>'
+      +'<div style="font-size:12px;color:var(--ac);margin-top:2px">'+r.dx+'</div>'
+      +(r.cobertura?'<div style="font-size:11px;color:var(--mt)">'+r.cobertura+'</div>':'')
+      +(r.proxima?'<div style="font-size:11px;color:var(--am);margin-top:2px">📅 Próx: '+r.proxima+'</div>':'<div style="font-size:11px;color:var(--mt2);margin-top:2px">Sin fecha de control</div>')
+      +'</div>'
+      +'<div style="color:var(--mt);font-size:18px">›</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  cont.innerHTML=html;
 }
 
 function buildStats(){
