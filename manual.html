@@ -16,11 +16,7 @@ html,body{margin:0;padding:0;background:#F1F4F2;}
 <body>
 <div id="root"><div id="loading"><p>Cargando manual...</p></div></div>
 <script>
-window.onerror = function(msg,src,line,col,err){
-  var el=document.getElementById('root');
-  if(el) el.innerHTML='<div style="padding:20px;color:#c0392b;font-family:sans-serif;max-width:420px;font-size:13px"><b>Error (l.'+line+'):</b><br><code style="font-size:11px;display:block;margin-top:8px;white-space:pre-wrap;word-break:break-all">'+msg+'</code></div>';
-  return false;
-};
+window.onerror=function(msg,src,line,col,err){var el=document.getElementById('root');if(el)el.innerHTML='<div style="padding:20px;color:#c0392b;font-family:sans-serif;max-width:420px;font-size:13px"><b>Error (l.'+line+'):</b><br><code style="font-size:11px;display:block;margin-top:8px;white-space:pre-wrap;word-break:break-all">'+msg+'</code></div>';return false;};
 </script>
 <script>
 (function(window) {
@@ -17214,7 +17210,7 @@ console.log("React " + window.React.version + " ReactDOM.createRoot:" + typeof w
 var React = window.React;
 var ReactDOM = window.ReactDOM;
 if (!React || !ReactDOM || typeof ReactDOM.createRoot !== 'function') {
-  document.getElementById('root').innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif"><b>Error:</b> React/ReactDOM no disponible</div>';
+  document.getElementById('root').innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif"><b>Error:</b> React no disponible.</div>';
   throw new Error('React no disponible');
 }
 "use strict";
@@ -17263,6 +17259,7 @@ var ICON_DEFS = {
     pill: [["path", { d: "M5.7 9.7 14.3 18.3a4 4 0 0 0 5.6-5.6L11.3 4.1a4 4 0 0 0-5.6 5.6Z" }], ["path", { d: "m8.7 7.7 7.6 7.6" }]],
     "calendar-clock": [["path", { d: "M5 4.3h14a1 1 0 0 1 1 1V9H4V5.3a1 1 0 0 1 1-1Z" }], ["path", { d: "M4 9h10.3" }], ["path", { d: "M4 9v9.7a1 1 0 0 0 1 1h5.6" }], ["path", { d: "M8 2.3v4" }], ["path", { d: "M16 2.3v4" }], ["circle", { cx: 17, cy: 17, r: 4.3 }], ["path", { d: "M17 15.2V17l1.3 1" }]],
     layers: [["path", { d: "M12 3.2 3.3 8 12 12.8 20.7 8Z" }], ["path", { d: "M3.3 13 12 17.8 20.7 13" }]],
+    "chevron-right": [["path", { d: "m9 18 6-6-6-6" }]],
 };
 function Icon(_a) {
     var name = _a.name, _b = _a.size, size = _b === void 0 ? 16 : _b, _c = _a.className, className = _c === void 0 ? "" : _c, style = _a.style;
@@ -19696,35 +19693,141 @@ var SCALES_DATA = {
         nota: "Especialmente \u00FAtil cuando el paciente no puede completar pruebas directas, o hay baja escolaridad o barrera idiom\u00E1tica.",
     },
     aq: {
-        nombre: "AQ \u2014 Autism Spectrum Quotient",
-        descripcion: "Cribado autoaplicado de rasgos del espectro autista en adultos, 50 \u00EDtems que explora habilidad social, atenci\u00F3n al detalle, comunicaci\u00F3n, imaginaci\u00F3n y cambio de foco atencional.",
-        puntuacion_total: "0\u201350",
-        nota: "Primera l\u00EDnea para orientar la sospecha; un puntaje elevado no es diagn\u00F3stico por s\u00ED solo \u2014 requiere evaluaci\u00F3n cl\u00EDnica especializada (ADOS-2/ADI-R) para confirmaci\u00F3n.",
+        nombre: "AQ-50 \u2014 Autism Spectrum Quotient",
+        descripcion: "Cribado autoaplicado de rasgos del espectro autista en adultos, 50 \u00EDtems divididos en 5 dominios (10 \u00EDtems cada uno). Cada \u00EDtem se punt\u00FAa 0 o 1 (respuesta 'autista-like'). Disponible en castellano y en formato online en embrace-autism.com.",
+        tabla: {
+            columnas: ["Dominio", "Qu\u00E9 eval\u00FAa", "\u00CDtems"],
+            filas: [
+                ["Habilidad social", "Dificultades en interacci\u00F3n y reciprocidad social", "1, 11, 13, 15, 22, 36, 44, 45, 47, 48"],
+                ["Cambio atencional", "Dificultad para cambiar el foco de atenci\u00F3n, rigidez", "2, 4, 10, 16, 25, 32, 34, 37, 43, 46"],
+                ["Atenci\u00F3n al detalle", "Hiperfoco en detalles, pensamiento concreto", "5, 6, 9, 12, 19, 23, 28, 29, 30, 49"],
+                ["Comunicaci\u00F3n", "Dificultades pragm\u00E1ticas del lenguaje", "7, 17, 18, 26, 27, 31, 33, 35, 38, 39"],
+                ["Imaginaci\u00F3n", "Rigidez en el pensamiento, dificultad para la ficci\u00F3n", "3, 8, 14, 20, 21, 24, 40, 41, 42, 50"],
+            ],
+        },
+        puntuacion_total: "0\u201350 (1 punto por cada respuesta 'autista-like')",
+        interpretacion: {
+            columnas: ["Puntaje", "Interpretaci\u00F3n"],
+            filas: [
+                ["0\u201310", "Por debajo del promedio \u2014 baja probabilidad de autismo"],
+                ["11\u201321", "Rango promedio en poblacion general"],
+                ["22\u201325", "Zona intermedia \u2014 observar en contexto clinico"],
+                ["26\u201331", "Elevado \u2014 el 79.3% de adultos autistas puntuan en este rango"],
+                ["32\u201350", "Muy elevado \u2014 alta probabilidad de rasgos autistas significativos"],
+            ],
+        },
+        nota: "Corte clinico clasico de Baron-Cohen: mayor o igual a 26. No es diagnostico por si solo \u2014 un resultado elevado orienta a evaluacion especializada (ADOS-2/ADI-R). Version corta disponible: AQ-10 (10 items, corte mayor o igual a 6).",
     },
     raads: {
         nombre: "RAADS-R \u2014 Ritvo Autism Asperger Diagnostic Scale-Revised",
-        descripcion: "Cuestionario autoaplicado espec\u00EDfico para cribado de TEA en adultos sin diagn\u00F3stico previo, m\u00E1s sensible que el AQ en presentaciones sutiles o con buen camuflaje social.",
-        nota: "\u00DAtil especialmente en adultos con buen nivel cognitivo que aprendieron a compensar (\"masking\") sus dificultades sociales durante a\u00F1os.",
+        descripcion: "80 \u00EDtems autoaplicados, 4 dominios. Cada \u00EDtem se punt\u00FAa 0-3 (0=nunca cierto; 1=verdadero solo ahora; 2=verdadero solo cuando era joven; 3=verdadero ahora y cuando era joven). M\u00E1s sensible que el AQ para presentaciones con buen camuflaje. Disponible en embrace-autism.com.",
+        tabla: {
+            columnas: ["Dominio", "\u00CDtems", "Puntaje max"],
+            filas: [
+                ["Relatedness social (social)", "Dificultades en reciprocidad, comprension de otros, contacto visual, relaciones", "39 items x 3 = 117"],
+                ["Lenguaje", "Pragmatica del lenguaje, comunicacion no literal, prosodia", "7 items x 3 = 21"],
+                ["Sensoriomotor", "Hiper/hiporeactividad sensorial, movimientos repetitivos, coordinacion", "18 items x 3 = 54"],
+                ["Intereses circunscriptos", "Intereses intensos y restringidos, rigidez, rutinas", "16 items x 3 = 48"],
+            ],
+        },
+        puntuacion_total: "0\u2013240 (suma de los 80 items)",
+        interpretacion: {
+            columnas: ["Puntaje", "Interpretacion"],
+            filas: [
+                ["0\u201364", "Por debajo del corte clinico"],
+                ["65 o mas", "Positivo para cribado de TEA (sensibilidad 97%, especificidad 100% en la validacion original)"],
+                ["Media en poblacion autista", "Aproximadamente 133-134"],
+                ["Media en poblacion no autista", "Aproximadamente 26-29"],
+            ],
+        },
+        nota: "Es el instrumento de cribado con mayor sensibilidad para TEA en adultos con buen nivel cognitivo y camuflaje social. Tarda 30-45 minutos. Completarlo online en embrace-autism.com incluye feedback automatico.",
     },
     ados: {
         nombre: "ADOS-2 \u2014 Autism Diagnostic Observation Schedule",
-        descripcion: "Observaci\u00F3n semiestructurada del comportamiento social y comunicativo, considerada el est\u00E1ndar de referencia para el diagn\u00F3stico de TEA. Requiere entrenamiento espec\u00EDfico y administraci\u00F3n por un especialista certificado.",
-        nota: "Se complementa con el ADI-R (entrevista a un informante sobre el desarrollo temprano) para una evaluaci\u00F3n diagn\u00F3stica completa.",
+        descripcion: "Observacion semiestructurada del comportamiento social y comunicativo. 5 modulos segun nivel ling\u00FC\u00EDstico y edad. El Modulo 4 es el aplicable a adultos con habla fluida. Cada modulo dura 40-60 minutos.",
+        tabla: {
+            columnas: ["Area evaluada", "Ejemplos de tareas / situaciones"],
+            filas: [
+                ["Comunicacion", "Descripcion de una imagen, relato de una historia, conversacion espontanea"],
+                ["Interaccion social reciproca", "Contacto ocular, expresiones faciales, compartir placer, comprension emocional"],
+                ["Juego / imaginacion (modulos 1-2)", "Juego simbolico, uso funcional de objetos"],
+                ["Comportamientos restringidos y repetitivos", "Intereses, movimientos, rutinas, respuestas sensoriales"],
+                ["Autonomia / independencia (modulo 4)", "Planes de futuro, relaciones, trabajo"],
+            ],
+        },
+        nota: "Estandar de referencia para el diagnostico de TEA junto al ADI-R. Requiere entrenamiento certificado y material oficial. No se puede administrar sin capacitacion especifica. Los puntajes se comparan con tablas normativas segun modulo y nivel de funcionamiento.",
+        alertas: ["No administrar sin entrenamiento certificado. El diagnostico de TEA basado en ADOS-2 requiere la combinacion con historia clinica, ADI-R (o equivalente) y criterios DSM-5."],
     },
     asrs: {
-        nombre: "ASRS v1.1 \u2014 Adult ADHD Self-Report Scale",
-        descripcion: "Cribado autoaplicado de la OMS para TDAH en adultos, 18 \u00EDtems (6 de cribado r\u00E1pido + 12 adicionales) que exploran s\u00EDntomas de inatenci\u00F3n e hiperactividad-impulsividad en los \u00FAltimos 6 meses.",
-        nota: "Primera l\u00EDnea en consultorio por su brevedad; un resultado positivo orienta a profundizar con CAARS o Wender Utah y evaluaci\u00F3n cl\u00EDnica completa.",
+        nombre: "ASRS v1.1 \u2014 Adult ADHD Self-Report Scale (OMS)",
+        descripcion: "18 items autoaplicados (0=nunca a 4=muy frecuentemente), basados en los criterios DSM-IV adaptados a adultos. Se divide en Parte A (6 items de cribado) y Parte B (12 items adicionales).",
+        tabla: {
+            columnas: ["Parte", "Items", "Contenido", "Uso"],
+            filas: [
+                ["Parte A (cribado)", "Items 1-6", "Los 6 items con mayor poder discriminativo entre adultos con y sin TDAH: frecuencia de errores por falta de atencion, dificultad para sostener atencion en tareas aburridas, dificultad para organizar, olvido de compromisos, inquietud al hacer tareas largas, exceso de actividad o sensacion de obligacion a moverse", "Si 4 o mas de los 6 items puntuan en las casillas sombreadas (frecuentemente o muy frecuentemente) el cribado es positivo"],
+                ["Parte B (complementaria)", "Items 7-18", "Sintomas adicionales de inatension e hiperactividad/impulsividad: terminar frases de otros, dificultad para esperar, acumular cosas, distraibilidad, olvidar donde se dejan objetos, etc.", "Aporta contexto clinico pero no determina el cribado por si sola"],
+            ],
+        },
+        puntuacion_total: "Parte A: 0-24 (los 6 items, 0-4 c/u). Cribado positivo si 4 o mas items de la Parte A puntuan en 'frecuentemente' o 'muy frecuentemente' (zona sombreada en la version original).",
+        interpretacion: {
+            columnas: ["Resultado Parte A", "Interpretacion"],
+            filas: [
+                ["0-3 items en zona sombreada", "Cribado negativo \u2014 TDAH menos probable como causa principal"],
+                ["4-6 items en zona sombreada", "Cribado positivo \u2014 profundizar con DIVA, Wender Utah y evaluacion clinica completa"],
+            ],
+        },
+        nota: "Disponible en castellano y en formato online. La version de 6 items (solo Parte A) tiene sensibilidad del 68.7% y especificidad del 99.5% para TDAH adulto segun la validacion original de Kessler et al.",
     },
     wender: {
-        nombre: "Escala de Wender Utah",
-        descripcion: "Cuestionario autoaplicado que eval\u00FAa retrospectivamente s\u00EDntomas de TDAH durante la infancia, en adultos que consultan sin diagn\u00F3stico previo.",
-        nota: "Complementa al ASRS aportando la dimensi\u00F3n retrospectiva (s\u00EDntomas antes de los 12 a\u00F1os), requisito diagn\u00F3stico del TDAH.",
+        nombre: "WURS-25 \u2014 Escala de Wender Utah (version corta)",
+        descripcion: "25 items (de los 61 originales) que evaluan retrospectivamente 5 areas de sintomas de TDAH durante la infancia (antes de los 12 anos). Cada item 0 (nada o casi nada) a 4 (mucho). Autoaplicada por el adulto recordando su infancia.",
+        tabla: {
+            columnas: ["Area", "Ejemplos de items"],
+            filas: [
+                ["Dificultades de atencion y concentracion", "Me distria facilmente, no me podia concentrar, sonar despierto, no terminaba las cosas"],
+                ["Problemas de conducta / impulsividad", "Me metia en peleas, hacia cosas impulsivamente, irritable"],
+                ["Ansiedad y tristeza", "Triste, ansioso, de humor cambiante, baja autoestima"],
+                ["Hiperactividad", "Inquieto, problemas para quedarme quieto, siempre en movimiento"],
+                ["Problemas escolares", "Malos resultados academicos a pesar de esforzarme, repetir cursos"],
+            ],
+        },
+        puntuacion_total: "0\u2013100 (25 items x 4 puntos maximo)",
+        interpretacion: {
+            columnas: ["Puntaje", "Interpretacion"],
+            filas: [
+                ["Menor de 30", "Por debajo del corte \u2014 sintomas infantiles de TDAH improbables"],
+                ["30-45", "Zona intermedia \u2014 valorar en contexto clinico"],
+                ["46 o mas", "Positivo para sintomas de TDAH en la infancia (corte clasico de Retz et al.)"],
+                ["Media en adultos con TDAH", "Aproximadamente 54-58"],
+            ],
+        },
+        nota: "Evalua los sintomas retrospectivos de la infancia, requisito diagnostico del TDAH. No es diagnostica por si sola: un puntaje elevado debe combinarse con evaluacion actual (ASRS, DIVA) y criterios DSM-5. La percepcion retrospectiva puede estar sesgada.",
     },
     caars: {
         nombre: "CAARS \u2014 Conners' Adult ADHD Rating Scale",
-        descripcion: "Evaluaci\u00F3n m\u00E1s detallada que el ASRS, con versi\u00F3n autoaplicada y versi\u00F3n de informante (pareja, familiar). Explora m\u00FAltiples dominios: inatenci\u00F3n, hiperactividad/impulsividad, problemas de autoconcepto, labilidad emocional, entre otros.",
-        nota: "\u00DAtil cuando el ASRS resulta positivo y se necesita mayor profundidad antes de decidir conducta terap\u00E9utica.",
+        descripcion: "Instrumento multidimensional para evaluacion de TDAH en adultos, con version autoaplicada (CAARS-S) y version para un informante (CAARS-O). Existen versiones de 66 items (forma larga), 34 items (forma corta) y 10 items (screening). Cada item se puntua 0-3.",
+        tabla: {
+            columnas: ["Subescala", "Contenido"],
+            filas: [
+                ["Inatension/problemas de memoria", "Distractibilidad, olvidos, falta de organizacion"],
+                ["Hiperactividad/inquietud", "Agitacion motora o interna, dificultad para relajarse"],
+                ["Impulsividad/labilidad emocional", "Reactividad emocional rapida, impaciencia, interrumpir"],
+                ["Problemas de autoconcepto", "Baja autoestima relacionada con el TDAH, frustracion cronica"],
+                ["Indice TDAH de Conners (DSM-IV inatento)", "Sintomas especificos de presentacion inatenta"],
+                ["Indice TDAH de Conners (DSM-IV hiperactivo/impulsivo)", "Sintomas especificos de presentacion hiperactiva"],
+            ],
+        },
+        puntuacion_total: "T-scores por subescala (media=50, DS=10). Se comparan con normas segun sexo y edad.",
+        interpretacion: {
+            columnas: ["T-score", "Interpretacion"],
+            filas: [
+                ["Menor de 60", "Dentro del rango normal"],
+                ["60-64", "Elevado \u2014 clinicamente significativo a considerar"],
+                ["65 o mas", "Muy elevado (1.5 DS sobre la media) \u2014 criterio de significacion clinica habitual"],
+                ["70 o mas", "Marcadamente elevado"],
+            ],
+        },
+        nota: "El valor diferencial del CAARS respecto al ASRS es la version de informante (CAARS-O): permite contrastar la autopercepcion del paciente con la observacion de alguien cercano, lo que es especialmente util cuando hay poca conciencia de los sintomas. Requiere adquisicion del instrumento oficial (MHS Assessments).",
     },
     wais: {
         nombre: "WAIS-IV \u2014 Escala de Inteligencia de Wechsler para Adultos",
@@ -20127,6 +20230,14 @@ var SCALES_CATEGORIES = [
         label: "Neurodiversidad \u00B7 TEA / TDAH / AACC",
         color: "#5B3A56",
         scales: ["asrs", "diva", "wender", "caars", "aq", "raads", "ados", "wais"],
+        recursos: [
+            {
+                label: "Embrace Autism",
+                desc: "Tests online: AQ, RAADS-R, DIVA y m\u00E1s. En ingl\u00E9s, acceso libre.",
+                url: "https://embrace-autism.com",
+                color: "#5B3A56",
+            }
+        ],
     },
     {
         id: "movimientos",
@@ -20173,22 +20284,31 @@ function ScalesLibraryView(_a) {
             React.createElement(Icon, { name: "search", size: 16, className: "absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A9088]" }),
             React.createElement("input", { value: query, onChange: function (e) { return setQuery(e.target.value); }, placeholder: "Buscar escala\u2026", className: "w-full bg-white rounded-xl pl-10 pr-9 py-3 text-[14px] text-[#1B2230] placeholder:text-[#9CA39E] outline-none ring-2 ring-transparent focus:ring-[#9EC7C0] border border-[#DCE1DD] transition-shadow" }),
             query && (React.createElement("button", { onClick: function () { return setQuery(""); }, className: "absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA39E]" },
-                React.createElement(X, { size: 15 })))),
+                React.createElement(Icon, { name: "x", size: 15 })))),
         filteredCats.length === 0 && (React.createElement("p", { className: "text-[14px] text-[#6B7480]" }, "Sin resultados. Prob\u00E1 con otro t\u00E9rmino.")),
         React.createElement("div", { className: "space-y-7" }, filteredCats.map(function (cat) { return (React.createElement("div", { key: cat.id },
             React.createElement("div", { className: "flex items-center gap-2 mb-3" },
                 React.createElement("span", { className: "w-2 h-2 rounded-full shrink-0", style: { background: cat.color } }),
                 React.createElement("h3", { className: "text-[12px] font-semibold uppercase tracking-wide text-[#6B7480]", style: { fontFamily: "'IBM Plex Mono', monospace" } }, cat.label)),
-            React.createElement("div", { className: "grid grid-cols-1 gap-2" }, cat.scales.map(function (id) {
-                var s = SCALES_DATA[id];
-                if (!s)
-                    return null;
-                return (React.createElement("button", { key: id, onClick: function () { return onOpenScale(id); }, className: "text-left bg-white rounded-xl border border-[#DCE1DD] px-4 py-3.5 hover:border-[#9EC7C0] hover:shadow-sm transition-all flex items-center justify-between gap-3" },
-                    React.createElement("div", null,
-                        React.createElement("p", { className: "text-[15px] font-semibold text-[#1B2230] leading-snug", style: { fontFamily: "'Source Serif 4', Georgia, serif" } }, s.nombre),
-                        s.puntuacion_total && (React.createElement("p", { className: "text-[11.5px] text-[#6B7480] mt-0.5", style: { fontFamily: "'IBM Plex Mono', monospace" } }, s.puntuacion_total))),
-                    React.createElement(Icon, { name: "chevron-right", size: 16, className: "text-[#9EC7C0] shrink-0" })));
-            })))); }))));
+            React.createElement("div", { className: "grid grid-cols-1 gap-2" },
+                cat.scales.map(function (id) {
+                    var s = SCALES_DATA[id];
+                    if (!s)
+                        return null;
+                    return (React.createElement("button", { key: id, onClick: function () { return onOpenScale(id); }, className: "text-left bg-white rounded-xl border border-[#DCE1DD] px-4 py-3.5 hover:border-[#9EC7C0] hover:shadow-sm transition-all flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-[15px] font-semibold text-[#1B2230] leading-snug", style: { fontFamily: "'Source Serif 4', Georgia, serif" } }, s.nombre),
+                            s.puntuacion_total && (React.createElement("p", { className: "text-[11.5px] text-[#6B7480] mt-0.5", style: { fontFamily: "'IBM Plex Mono', monospace" } }, s.puntuacion_total))),
+                        React.createElement(Icon, { name: "chevron-right", size: 16, className: "text-[#9EC7C0] shrink-0" })));
+                }),
+                cat.recursos && cat.recursos.map(function (rec, ri) { return (React.createElement("a", { key: "rec-" + ri, href: rec.url, target: "_blank", rel: "noopener noreferrer", className: "flex items-center gap-3 rounded-xl border px-4 py-3.5 hover:shadow-sm transition-all", style: { borderColor: rec.color, background: rec.color + "12" }, onClick: function (e) { return e.stopPropagation(); } },
+                    React.createElement("div", { className: "flex-1" },
+                        React.createElement("p", { className: "text-[15px] font-semibold leading-snug", style: { color: rec.color, fontFamily: "'Source Serif 4', Georgia, serif" } }, rec.label),
+                        React.createElement("p", { className: "text-[12px] text-[#6B7480] mt-0.5" }, rec.desc)),
+                    React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: rec.color, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "shrink-0" },
+                        React.createElement("path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" }),
+                        React.createElement("polyline", { points: "15 3 21 3 21 9" }),
+                        React.createElement("line", { x1: "10", y1: "14", x2: "21", y2: "3" })))); })))); }))));
 }
 function ResultCard(_a) {
     var r = _a.r, onSelect = _a.onSelect;
