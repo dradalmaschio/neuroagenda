@@ -17,7 +17,17 @@ html,body{margin:0;padding:0;background:#F1F4F2;}
 <body>
 <div id="root"><div id="loading"><p>Cargando manual…</p></div></div>
 
-<!-- React + ReactDOM incrustados (sin CDN, sin internet requerido) -->
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  var el = document.getElementById('root');
+  if (el) el.innerHTML = '<div style="padding:20px;color:#c0392b;font-family:sans-serif;max-width:400px"><b>Error:</b> ' + msg + ' (línea ' + line + ')</div>';
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('Unhandled promise rejection:', e.reason);
+});
+</script>
+
 <script>
 (function() {
   'use strict';
@@ -1170,8 +1180,13 @@ html,body{margin:0;padding:0;background:#F1F4F2;}
 
 </script>
 
-<!-- App -->
 <script>
+var React = window.React;
+var ReactDOM = window.ReactDOM;
+if (!React || !ReactDOM) {
+  document.getElementById('root').innerHTML = '<div style="padding:20px;color:#c0392b;font-family:sans-serif">Error: React no disponible. Recargá la página.</div>';
+  throw new Error('React no disponible');
+}
 "use strict";
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
@@ -4284,8 +4299,14 @@ function App() {
             React.createElement("footer", { className: "max-w-6xl mx-auto px-5 pb-8 pt-2" },
                 React.createElement("p", { className: "text-[11.5px] text-[#9CA39E]" }, "Manual de uso personal para consultorio \u2014 no reemplaza el juicio cl\u00EDnico ni las gu\u00EDas de pr\u00E1ctica vigentes.")))));
 }
-var __root = ReactDOM.createRoot(document.getElementById("root"));
-__root.render(React.createElement(App, null));
+try {
+  var __root = ReactDOM.createRoot(document.getElementById("root"));
+  __root.render(React.createElement(App, null));
+} catch(e) {
+  console.error('React render error:', e);
+  var el = document.getElementById('root');
+  if (el) el.innerHTML = '<div style="padding:20px;color:#c0392b;font-family:sans-serif;max-width:400px"><b>Error al iniciar el manual:</b><br><code style="font-size:12px">' + e.message + '</code></div>';
+}
 
 </script>
 
