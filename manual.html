@@ -19391,6 +19391,7 @@ var SCALES_DATA = {
         nota: "Los cortes son orientativos y dependen de edad/escolaridad. En pacientes con alta reserva cognitiva, un 30/30 no descarta deterioro incipiente: la ca\u00EDda relativa respecto del nivel basal es m\u00E1s sensible que el corte poblacional.",
     },
     gds: {
+        mdcalc: "https://www.mdcalc.com/calc/10566/geriatric-depression-scale-gds-15",
         nombre: "GDS-15 \u2014 Geriatric Depression Scale (versi\u00F3n corta)",
         descripcion: "Cribado de depresi\u00F3n espec\u00EDfico para adultos mayores, 15 preguntas de respuesta s\u00ED/no. Un punto por cada respuesta indicativa de depresi\u00F3n.",
         bullets: [
@@ -19438,6 +19439,7 @@ var SCALES_DATA = {
         nota: "Es un instrumento registrado (Zigmond & Snaith); ac\u00E1 se resume su estructura y puntos de corte, no el cuestionario textual completo.",
     },
     phq9: {
+        mdcalc: "https://www.mdcalc.com/calc/1725/phq9-patient-health-questionnaire9",
         nombre: "PHQ-9 \u2014 Patient Health Questionnaire",
         descripcion: "9 \u00EDtems basados en los criterios de episodio depresivo mayor, cada uno puntuado 0\u20133 seg\u00FAn frecuencia en las \u00FAltimas 2 semanas (0=nunca, 3=casi todos los d\u00EDas). Dominios evaluados:",
         bullets: [
@@ -19465,6 +19467,7 @@ var SCALES_DATA = {
         alertas: ["El \u00EDtem de ideaci\u00F3n de muerte/autolesi\u00F3n requiere evaluaci\u00F3n cl\u00EDnica directa de riesgo suicida, independientemente del puntaje total."],
     },
     hamilton: {
+        mdcalc: "https://www.mdcalc.com/calc/10043/hamilton-depression-rating-scale-hamd",
         nombre: "Escala de Hamilton para la Depresi\u00F3n (HDRS-17)",
         descripcion: "17 \u00EDtems heteroaplicados (los completa el evaluador a partir de la entrevista, no el paciente por s\u00ED solo), con puntuaci\u00F3n variable por \u00EDtem (0\u20132 o 0\u20134 seg\u00FAn el \u00EDtem). Mayor peso relativo en s\u00EDntomas som\u00E1ticos que el PHQ-9 o el GDS.",
         puntuacion_total: "0\u201352 aproximadamente (suma de los 17 \u00EDtems)",
@@ -19539,6 +19542,7 @@ var SCALES_DATA = {
         nota: "En la prueba de apomorfina se considera respuesta positiva una mejor\u00EDa \u226520\u201330% del score motor basal respecto del estado \"off\". Esta es una gu\u00EDa resumida de los dominios \u2014 para puntuaci\u00F3n formal usar el instrumento completo (MDS-UPDRS).",
     },
     moca: {
+        mdcalc: "https://www.mdcalc.com/calc/10044/montreal-cognitive-assessment-moca",
         nombre: "MoCA \u2014 Montreal Cognitive Assessment",
         descripcion: "Cribado cognitivo de 30 puntos, m\u00E1s sensible que el MMSE para detectar Deterioro Cognitivo Leve, con mayor peso relativo en funci\u00F3n ejecutiva y atenci\u00F3n.",
         tabla: {
@@ -19623,6 +19627,7 @@ var SCALES_DATA = {
         nota: "Clave para distinguir DCL de demencia: en DCL las AVD instrumentales est\u00E1n preservadas; la ca\u00EDda funcional aqu\u00ED (sobre todo en manejo de dinero y de la medicaci\u00F3n) marca el paso a demencia.",
     },
     barthel: {
+        mdcalc: "https://www.mdcalc.com/calc/3912/barthel-index-activities-daily-living-adl",
         nombre: "\u00CDndice de Barthel (ADL b\u00E1sicas)",
         descripcion: "Eval\u00FAa actividades b\u00E1sicas de la vida diaria en 10 \u00EDtems: alimentaci\u00F3n, ba\u00F1o, vestido, aseo personal, deposici\u00F3n, micci\u00F3n, uso del inodoro, traslado cama-silla, deambulaci\u00F3n, y subir/bajar escaleras. Puntuaci\u00F3n variable por \u00EDtem (0, 5, 10 o 15 seg\u00FAn el \u00EDtem).",
         puntuacion_total: "0\u2013100",
@@ -19759,6 +19764,7 @@ var SCALES_DATA = {
         alertas: ["No administrar sin entrenamiento certificado. El diagnostico de TEA basado en ADOS-2 requiere la combinacion con historia clinica, ADI-R (o equivalente) y criterios DSM-5."],
     },
     asrs: {
+        mdcalc: "https://www.mdcalc.com/calc/1730/adult-self-report-scale-asrs-adhd",
         nombre: "ASRS v1.1 \u2014 Adult ADHD Self-Report Scale (OMS)",
         descripcion: "18 items autoaplicados (0=nunca a 4=muy frecuentemente), basados en los criterios DSM-IV adaptados a adultos. Se divide en Parte A (6 items de cribado) y Parte B (12 items adicionales).",
         tabla: {
@@ -19902,6 +19908,7 @@ var SCALES_DATA = {
         nota: "\u00DAtil para cuantificar severidad basal y respuesta al tratamiento en S\u00EDndrome de Piernas Inquietas (ver M\u00F3dulo 2).",
     },
     gad7: {
+        mdcalc: "https://www.mdcalc.com/calc/1727/gad7-general-anxiety-disorder7",
         nombre: "GAD-7 \u2014 Generalized Anxiety Disorder Scale",
         descripcion: "7 \u00EDtems autoaplicados que eval\u00FAan la frecuencia de s\u00EDntomas de ansiedad generalizada durante las \u00FAltimas 2 semanas. Cada \u00EDtem 0 (nunca) a 3 (casi todos los d\u00EDas). Dominios evaluados:",
         bullets: [
@@ -20019,8 +20026,15 @@ function ScaleModal(_a) {
         React.createElement("div", { className: "bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[88vh] overflow-y-auto scrollbar-thin", onClick: function (e) { return e.stopPropagation(); } },
             React.createElement("div", { className: "sticky top-0 bg-white border-b border-[#EAEDEA] px-5 py-4 flex items-start justify-between gap-3" },
                 React.createElement("h3", { className: "text-[17px] font-semibold text-[#1B2230]", style: { fontFamily: "'Source Serif 4', Georgia, serif" } }, scale.nombre),
-                React.createElement("button", { onClick: onClose, className: "shrink-0 text-[#9CA39E] hover:text-[#1B2230] p-1" },
-                    React.createElement(Icon, { name: "x", size: 18 }))),
+                React.createElement("div", { className: "flex items-center gap-2 shrink-0" },
+                    scale.mdcalc && (React.createElement("a", { href: scale.mdcalc, target: "_blank", rel: "noopener noreferrer", className: "flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#1F5C57] text-white hover:bg-[#174a46] transition-colors whitespace-nowrap", onClick: function (e) { return e.stopPropagation(); } },
+                        React.createElement("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" },
+                            React.createElement("path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" }),
+                            React.createElement("polyline", { points: "15 3 21 3 21 9" }),
+                            React.createElement("line", { x1: "10", y1: "14", x2: "21", y2: "3" })),
+                        "Calcular en MDCalc")),
+                    React.createElement("button", { onClick: onClose, className: "text-[#9CA39E] hover:text-[#1B2230] p-1" },
+                        React.createElement(Icon, { name: "x", size: 18 })))),
             React.createElement("div", { className: "px-5 py-4" },
                 scale.descripcion && React.createElement("p", { className: "text-[14px] text-[#2A3038] leading-relaxed mb-3" }, scale.descripcion),
                 React.createElement(Bullets, { items: scale.bullets }),
