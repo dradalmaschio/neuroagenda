@@ -529,7 +529,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <label>Nombre y apellido *</label><input type="text" id="pat-nombre" placeholder="Apellido, Nombre">
     <div class="form-row" style="margin-top:10px">
       <div><label>DNI</label><input type="text" id="pat-dni" placeholder="12345678"></div>
-      <div><label>Fecha de nacimiento</label><input type="text" id="pat-fnac" placeholder="dd/mm/aaaa"></div>
+      <div><label>Fecha de nacimiento</label><input type="text" id="pat-fnac" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric" oninput="autoSlash(this)"></div>
     </div>
     <div class="form-row">
       <div><label>Cobertura</label><input type="text" id="pat-cob" placeholder="PAMI, OSDE..."></div>
@@ -729,14 +729,44 @@ function enviarWA(id){
   setTimeout(function(){document.body.removeChild(a);},500);
 }
 
+function autoSlash(inp){
+  let v=inp.value.replace(/\D/g,'');
+  if(v.length>2) v=v.slice(0,2)+'/'+v.slice(2);
+  if(v.length>5) v=v.slice(0,5)+'/'+v.slice(5);
+  if(v.length>10) v=v.slice(0,10);
+  inp.value=v;
+}
+
 function setNextApp(id){
   const actual=nextApps[id]||'';
-  const val=prompt('Próxima consulta (DD/MM/AAAA):\nDejá vacío para borrar',actual);
-  if(val===null)return;
-  if(val.trim()){nextApps[id]=val.trim();}else{delete nextApps[id];}
-  S('napp',nextApps);
-  showPt(id);
-  buildHome();
+  // Crear mini modal de fecha
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:center;justify-content:center';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--bg);border-radius:14px;padding:22px 20px;width:min(88vw,320px)';
+  box.innerHTML='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Próxima consulta</div>'
+    +'<input id="_date_inp" type="text" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric"'
+    +' style="width:100%;padding:11px 14px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:18px;text-align:center;letter-spacing:2px;box-sizing:border-box"'
+    +' oninput="autoSlash(this)">'
+    +'<div style="font-size:11px;color:var(--mt);margin:6px 0 14px;text-align:center">Dejá vacío para borrar</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="_date_cancel" style="flex:1;padding:10px;border:1px solid var(--bd);border-radius:var(--rs);background:none;color:var(--mt);cursor:pointer;font-size:14px">Cancelar</button>'
+    +'<button id="_date_ok" style="flex:1;padding:10px;border:none;border-radius:var(--rs);background:var(--grad);color:#fff;cursor:pointer;font-size:14px;font-weight:600">Guardar</button>'
+    +'</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  const inp=document.getElementById('_date_inp');
+  inp.value=actual;
+  setTimeout(()=>inp.focus(),80);
+  document.getElementById('_date_cancel').onclick=function(){document.body.removeChild(ov);};
+  document.getElementById('_date_ok').onclick=function(){
+    const val=inp.value.trim();
+    if(val){nextApps[id]=val;}else{delete nextApps[id];}
+    S('napp',nextApps);
+    document.body.removeChild(ov);
+    showPt(id);buildHome();
+  };
+  inp.onkeydown=function(e){if(e.key==='Enter')document.getElementById('_date_ok').click();if(e.key==='Escape')document.getElementById('_date_cancel').click();};
 }
 
 function buildProximas(){
