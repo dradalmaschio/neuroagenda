@@ -354,7 +354,8 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <button class="btns" onclick="openEditPat(currentPatId)">✎ Editar paciente</button>
   </div>
   <div id="det"></div>
-  <div style="margin-top:24px;padding-top:16px;border-top:1px dashed var(--bd);text-align:center">
+  <div style="margin-top:24px;padding-top:16px;border-top:1px dashed var(--bd);text-align:center;display:flex;gap:10px;justify-content:center">
+    <button onclick="marcarObito(currentPatId)" style="background:none;border:1px solid #99000055;color:#990000;font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">✝ Óbito</button>
     <button onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)55;color:var(--rd);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar paciente</button>
   </div>
 </div>
@@ -1517,7 +1518,7 @@ function rpts(){
   if(!fil.length){document.getElementById('plist').innerHTML='<div style="text-align:center;color:var(--mt);padding:36px 0">Sin resultados</div>';return;}
   document.getElementById('plist').innerHTML=fil.map(p=>{
     const d=showDx(p),c=dc2(d),edad=p.fecha_nac?calcEdad(p.fecha_nac):(p.edad||'');
-    return '<div class="pc" onclick="showPt(\''+esc(p.id)+'\')"><div class="av" style="background:'+c+'22;color:'+c+'">'+ini(p.id)+'</div><div class="pi"><div class="pn">'+p.nombre+'</div><div class="pm">'+(edad?edad+' a\u00f1os \u00b7 ':'')+( p.cobertura||'Sin cobertura')+'</div></div><div class="pbadge" style="background:'+c+'22;color:'+c+'">'+dl2(d)+'</div></div>';
+    return '<div class="pc" onclick="showPt(\''+esc(p.id)+'\')"><div class="av" style="background:'+c+'22;color:'+c+'">'+ini(p.id)+'</div><div class="pi"><div class="pn">'+p.nombre+(p.obito?' <span style="color:#cc0000;font-size:10px;font-weight:800;letter-spacing:.5px">ÓBITO</span>':'')+'</div><div class="pm">'+(edad?edad+' a\u00f1os \u00b7 ':'')+( p.cobertura||'Sin cobertura')+'</div></div><div class="pbadge" style="background:'+c+'22;color:'+c+'">'+dl2(d)+'</div></div>';
   }).join('');
 }
 
@@ -1687,6 +1688,22 @@ function delNota(pacId, notaIdx, isBase){
     if(notas2[pacId]){notas2[pacId].splice(notaIdx,1);S('n2',notas2);}
   }
   showPt(pacId);toast('Consulta eliminada');
+}
+
+function marcarObito(id){
+  const p=getPat(id);if(!p)return;
+  const yaObito=p.obito;
+  if(!confirm(yaObito?'¿Quitar la marca de Óbito?':'¿Marcar a '+p.nombre+' como Óbito?'))return;
+  if(id.startsWith('new_')){
+    const idx=extraPats.findIndex(e=>e.id===id);
+    if(idx!==-1){extraPats[idx].obito=!yaObito;S('ep',extraPats);}
+  } else {
+    if(!patEdits[id])patEdits[id]={};
+    patEdits[id].obito=!yaObito;
+    S('pe',patEdits);
+  }
+  showPt(id);
+  toast(yaObito?'Marca de Óbito quitada':'Marcado como Óbito');
 }
 
 function delPat(id){
