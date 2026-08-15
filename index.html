@@ -606,6 +606,7 @@ let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resu
   if(changed)S('co',cobros);
 })();
 let nextApps=L('napp',{});
+let waEnviados=L('wa_env',{});
 // Corregir años de 2 dígitos en nextApps existentes
 (function(){
   let changed=false;
@@ -760,6 +761,10 @@ function enviarWA(id){
   const waUrl=telArg
     ? 'https://wa.me/'+telArg+'?text='+encodeURIComponent(msg)
     : 'https://wa.me/?text='+encodeURIComponent(msg);
+  // Guardar fecha de envío
+  waEnviados[id]=new Date().toLocaleDateString('es-AR');
+  S('wa_env',waEnviados);
+  buildHome();
   // Guardar en historial de mensajes
   let histWA=L('wa_hist',[]);
   histWA.unshift({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),paciente:p.nombre,tel:p.telefono||'',msg});
@@ -839,10 +844,16 @@ function buildProximas(){
     const diasRestantes=Math.ceil((x.d-hoy)/(1000*60*60*24));
     const color=diasRestantes<0?'var(--rd)':diasRestantes<=3?'var(--am)':'var(--gn)';
     const label=diasRestantes<0?'Vencida hace '+Math.abs(diasRestantes)+' día'+(Math.abs(diasRestantes)>1?'s':''):diasRestantes===0?'Hoy':diasRestantes===1?'Mañana':'En '+diasRestantes+' días';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--sf);border-radius:var(--rs);margin-bottom:5px;cursor:pointer" onclick="showPt(\''+esc(x.id)+'\')">'
-      +'<div style="flex:1"><div style="font-size:13px;font-weight:500">'+x.nombre+'</div>'
+    const waSent=waEnviados[x.id];
+    const waHoy=waSent&&waSent===new Date().toLocaleDateString('es-AR');
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--sf);border-radius:var(--rs);margin-bottom:5px">'
+      +'<div style="flex:1;cursor:pointer" onclick="showPt(\''+esc(x.id)+'\')">'
+      +'<div style="font-size:13px;font-weight:500">'+x.nombre+'</div>'
       +'<div style="font-size:11px;color:var(--mt)">'+x.fecha+'</div></div>'
-      +'<div style="font-size:12px;font-weight:600;color:'+color+'">'+label+'</div></div>';
+      +(waHoy
+        ?'<div style="font-size:11px;font-weight:600;color:#25D366">✓ Enviado</div>'
+        :'<div style="font-size:12px;font-weight:600;color:'+color+'">'+label+'</div>'
+      )+'</div>';
   }).join('');
 }
 
