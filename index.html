@@ -3216,8 +3216,24 @@ function buildBackupPayload(){
     extraPats: L('ep',[]), patEdits: L('pe',{}), dxPropio: L('dxp',{}), dxIA: L('dxi',{}),
     notas2: L('n2',{}), turnos: L('tu',{}), cobros: L('co',[]), gastos: L('ga',[]),
     resumenesIA: L('ria',{}), nextApps: L('napp',{}),
+    waEnviados: L('wa_env',{}), secLlamados: L('sec_llamados',[]),
     patImgs: patImgs
   };
+}
+
+// Descarga el archivo actual de Dropbox (o {} si no existe todavía)
+async function dbxFetchRemote(token){
+  try{
+    const res = await fetch('https://content.dropboxapi.com/2/files/download', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Dropbox-API-Arg': JSON.stringify({path: DBX_PATH})
+      }
+    });
+    if(!res.ok) return {};
+    return await res.json();
+  }catch(e){ return {}; }
 }
 
 async function dbxSaveNow(){
@@ -3228,7 +3244,11 @@ async function dbxSaveNow(){
   try{
     const token = await getDbxAccessToken();
     if(!token){ dbxSetStatus('err','No se pudo renovar la conexión a Dropbox'); dbxSaving=false; return; }
-    const payload = JSON.stringify(buildBackupPayload());
+    // Traemos lo último que haya en Dropbox y encima ponemos nuestros campos locales,
+    // así no pisamos cambios que hizo otro dispositivo en campos que nosotros no tocamos.
+    const remote = await dbxFetchRemote(token);
+    const merged = Object.assign({}, remote, buildBackupPayload(), {version:5, fecha:new Date().toISOString()});
+    const payload = JSON.stringify(merged);
     const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
       headers: {
@@ -3244,6 +3264,7 @@ async function dbxSaveNow(){
       body: payload
     });
     if(res.ok){
+      localStorage.setItem('dbx_last_fecha', merged.fecha);
       const now = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
       dbxSetStatus('ok','Dropbox: guardado ' + now + ' ✓');
     } else {
@@ -3263,16 +3284,17 @@ function dbxScheduleSave(){
   dbxSaveTimer = setTimeout(dbxSaveNow, 2000);
 }
 
-// Restore from Dropbox on first load if no local data
+// Trae lo último de Dropbox SIEMPRE que sea más nuevo que lo que ya tenemos localmente
+// (antes solo bajaba si el dispositivo estaba completamente vacío — por eso no sincronizaba).
+let dbxPulling = false;
 async function dbxRestoreIfNeeded(){
   updateDbxConnectBtn();
   if(!dbxIsConnected()){ dbxSetStatus('err','Dropbox: no conectado'); return; }
-  const hasData = L('ep',[]).length > 0 || Object.keys(L('pe',{})).length > 0 || Object.keys(L('n2',{})).length > 0;
-  if(hasData){ dbxSetStatus('ok','Dropbox: activo ✓'); return; }
+  if(dbxPulling || dbxSaving) return;
+  dbxPulling = true;
   try{
-    dbxSetStatus('saving','Restaurando desde Dropbox...');
     const token = await getDbxAccessToken();
-    if(!token){ dbxSetStatus('err','No se pudo conectar a Dropbox'); return; }
+    if(!token){ dbxSetStatus('err','No se pudo conectar a Dropbox'); dbxPulling=false; return; }
     const res = await fetch('https://content.dropboxapi.com/2/files/download', {
       method: 'POST',
       headers: {
@@ -3280,29 +3302,48 @@ async function dbxRestoreIfNeeded(){
         'Dropbox-API-Arg': JSON.stringify({path: DBX_PATH})
       }
     });
-    if(!res.ok){ dbxSetStatus('ok','Dropbox: listo ✓'); return; }
+    if(!res.ok){ dbxSetStatus('ok','Dropbox: listo ✓'); dbxPulling=false; return; }
     const data = await res.json();
-    if(!data.version){ dbxSetStatus('ok','Dropbox: listo ✓'); return; }
+    if(!data.version){ dbxSetStatus('ok','Dropbox: listo ✓'); dbxPulling=false; return; }
+
+    const remoteFecha = data.fecha || '';
+    const localFecha = localStorage.getItem('dbx_last_fecha') || '';
+    if(remoteFecha && remoteFecha === localFecha){
+      // Ya tenemos exactamente esta versión
+      dbxSetStatus('ok','Dropbox: activo ✓');
+      dbxPulling = false;
+      return;
+    }
+
     S('ep',data.extraPats||[]); S('pe',data.patEdits||{}); S('dxp',data.dxPropio||{});
     S('dxi',data.dxIA||{}); S('n2',data.notas2||{}); S('tu',data.turnos||{});
     S('co',data.cobros||[]); S('ga',data.gastos||[]); S('ria',data.resumenesIA||{}); S('napp',data.nextApps||{});
-    if(data.waEnviados) S('wa_env',data.waEnviados);
-    if(data.secLlamados) S('sec_llamados',data.secLlamados);
+    S('wa_env',data.waEnviados||{}); S('sec_llamados',data.secLlamados||[]);
     if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
     nextApps=L('napp',{}); waEnviados=L('wa_env',{}); llamados=L('sec_llamados',[]);
-    dbxSetStatus('ok','Dropbox: datos restaurados ✓');
-    buildHome(); rpts();
+    if(remoteFecha) localStorage.setItem('dbx_last_fecha', remoteFecha);
+
+    dbxSetStatus('ok','Dropbox: sincronizado ✓');
+    if(typeof buildHome==='function')buildHome();
+    if(typeof buildPills==='function')buildPills();
+    if(typeof rpts==='function')rpts();
+    if(typeof buildAg==='function')buildAg();
+    if(typeof buildStats==='function')buildStats();
+    if(typeof renderFin==='function')renderFin();
   } catch(e){
     dbxSetStatus('ok','Dropbox: listo ✓');
   }
+  dbxPulling = false;
 }
 
-// Init on load
+// Init on load, y luego reintentamos traer lo último cada 45s
+// (así si Sofía carga un llamado desde su teléfono, en un rato aparece en la computadora sin recargar la página)
 window.addEventListener('load', function(){
   dbxHandleRedirect();
   dbxRestoreIfNeeded();
+  setInterval(dbxRestoreIfNeeded, 45000);
 });
 
 </script>
