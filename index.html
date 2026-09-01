@@ -3221,6 +3221,60 @@ function buildBackupPayload(){
   };
 }
 
+// ── Fusión inteligente: combina remoto + local registro por registro,
+//    en vez de "todo o nada", para no perder datos cargados en otro dispositivo ──
+function mergeDict(remote, local){ return Object.assign({}, remote||{}, local||{}); }
+function mergeNestedDict(remote, local){
+  const out = Object.assign({}, remote||{});
+  Object.entries(local||{}).forEach(([k,v])=>{
+    out[k] = (v && typeof v==='object' && !Array.isArray(v)) ? Object.assign({}, out[k]||{}, v) : v;
+  });
+  return out;
+}
+function mergeDictOfArrays(remote, local){
+  const out = Object.assign({}, remote||{});
+  Object.entries(local||{}).forEach(([k,arr])=>{
+    const base=(out[k]||[]).slice();
+    (arr||[]).forEach(item=>{
+      const s=JSON.stringify(item);
+      if(!base.some(x=>JSON.stringify(x)===s)) base.push(item);
+    });
+    out[k]=base;
+  });
+  return out;
+}
+function mergeArrayById(remote, local, idKey){
+  const map=new Map();
+  (remote||[]).forEach(it=>map.set(it[idKey],it));
+  (local||[]).forEach(it=>map.set(it[idKey],it)); // lo local pisa solo su propio id
+  return Array.from(map.values());
+}
+function mergeArrayUnique(remote, local){
+  const map=new Map();
+  (remote||[]).forEach(it=>map.set(JSON.stringify(it),it));
+  (local||[]).forEach(it=>map.set(JSON.stringify(it),it));
+  return Array.from(map.values());
+}
+function mergeBackup(remote, mine){
+  remote = remote || {};
+  return {
+    version: 5, fecha: new Date().toISOString(),
+    extraPats: mergeArrayById(remote.extraPats, mine.extraPats, 'id'),
+    patEdits: mergeDict(remote.patEdits, mine.patEdits),
+    dxPropio: mergeDict(remote.dxPropio, mine.dxPropio),
+    dxIA: mergeDict(remote.dxIA, mine.dxIA),
+    notas2: mergeDictOfArrays(remote.notas2, mine.notas2),
+    turnos: mergeNestedDict(remote.turnos, mine.turnos),
+    cobros: mergeArrayById(remote.cobros, mine.cobros, 'id'),
+    gastos: mergeArrayById(remote.gastos, mine.gastos, 'id'),
+    resumenesIA: mergeDict(remote.resumenesIA, mine.resumenesIA),
+    nextApps: mergeDict(remote.nextApps, mine.nextApps),
+    waEnviados: mergeDict(remote.waEnviados, mine.waEnviados),
+    secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados),
+    patImgs: mergeDictOfArrays(remote.patImgs, mine.patImgs)
+  };
+}
+
 // Descarga el archivo actual de Dropbox (o {} si no existe todavía)
 async function dbxFetchRemote(token){
   try{
@@ -3247,7 +3301,7 @@ async function dbxSaveNow(){
     // Traemos lo último que haya en Dropbox y encima ponemos nuestros campos locales,
     // así no pisamos cambios que hizo otro dispositivo en campos que nosotros no tocamos.
     const remote = await dbxFetchRemote(token);
-    const merged = Object.assign({}, remote, buildBackupPayload(), {version:5, fecha:new Date().toISOString()});
+    const merged = mergeBackup(remote, buildBackupPayload());
     const payload = JSON.stringify(merged);
     const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
