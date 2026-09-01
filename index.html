@@ -195,6 +195,8 @@ select option{background:var(--bg)}
 .nota-block{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px;margin-bottom:6px}
 .nota-fecha{font-size:11px;font-weight:600;color:var(--ac);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
 .nota-txt{font-size:13px;color:var(--mt);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.stab{background:none;border:1px solid var(--bd);color:var(--mt);padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}
+.stab-on,.stab.stab-on{background:var(--grad);border-color:transparent;color:#fff}
 .pj-card{border:1px solid rgba(176,107,255,.3);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;box-shadow:0 2px 10px rgba(176,107,255,.08)}
 .pj-hdr{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;cursor:pointer;background:linear-gradient(135deg,var(--sf),#1F1240);user-select:none}
 .pj-hdr:active{opacity:.8}
@@ -266,6 +268,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <button class="tab" onclick="sv('fin')">Finanzas</button>
     <button class="tab" onclick="sv('dx');buildDxPanel()">Diagnósticos</button>
     <button class="tab" onclick="sv('stats')">Resumen</button>
+    <button class="tab" onclick="sv('secre');buildSecre()">Secretari@</button>
     <button class="tab ia" onclick="sv('ia')">&#10022; IA</button>
   </div>
 </nav>
@@ -357,6 +360,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   <div id="det"></div>
   <div style="margin-top:24px;padding-top:16px;border-top:1px dashed var(--bd);text-align:center;display:flex;gap:10px;justify-content:center">
     <button onclick="marcarObito(currentPatId)" style="background:none;border:1px solid #99000055;color:#990000;font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">✝ Óbito</button>
+    <button onclick="marcarAlta(currentPatId)" style="background:none;border:1px solid rgba(34,211,163,.4);color:var(--gn);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">✓ Alta</button>
     <button onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)55;color:var(--rd);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar paciente</button>
   </div>
 </div>
@@ -469,6 +473,45 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <div id="reporte-resultado"></div>
   </div>
   <div id="stcont"></div>
+</div>
+
+<div id="view-secre" class="view">
+  <!-- Tabs internos de Secretari@ -->
+  <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
+    <button class="stab stab-on" data-s="wa" onclick="secTab('wa')">💬 WhatsApp</button>
+    <button class="stab" data-s="contactar" onclick="secTab('contactar')">📋 A contactar</button>
+    <button class="stab" data-s="llamados" onclick="secTab('llamados')">📞 Llamados</button>
+    <button class="stab" data-s="masivo" onclick="secTab('masivo')">📨 Mensaje masivo</button>
+  </div>
+
+  <!-- WhatsApp recordatorios -->
+  <div id="s-wa" class="spanel">
+    <div class="sec-ttl">Próximas consultas — enviar recordatorio</div>
+    <div id="s-wa-lista"></div>
+  </div>
+
+  <!-- A contactar -->
+  <div id="s-contactar" class="spanel" style="display:none">
+    <div class="sec-ttl">Pacientes sin contactar (2024 – hoy)</div>
+    <div style="font-size:12px;color:var(--mt);margin-bottom:10px">Atendidos sin fecha de próxima consulta ni mensaje enviado</div>
+    <div id="s-cont-lista"></div>
+  </div>
+
+  <!-- Llamados pendientes -->
+  <div id="s-llamados" class="spanel" style="display:none">
+    <div class="sec-ttl">Llamados pendientes</div>
+    <button class="btnp" style="margin-bottom:12px" onclick="agregarLlamado()">+ Agregar paciente que llamó</button>
+    <div id="s-llam-lista"></div>
+  </div>
+
+  <!-- Mensaje masivo -->
+  <div id="s-masivo" class="spanel" style="display:none">
+    <div class="sec-ttl">Mensaje masivo</div>
+    <div style="font-size:12px;color:var(--mt);margin-bottom:8px">Usá {nombre} y {fecha} como variables</div>
+    <textarea id="s-msg-template" style="width:100%;padding:10px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:13px;min-height:100px;resize:vertical;font-family:inherit;box-sizing:border-box;margin-bottom:10px">Hola {nombre}, le saluda la Dra. Dal Maschio. Le escribo para recordarle que sería conveniente realizar un control neurológico alrededor del {fecha}. Cuando guste puede comunicarse para coordinar el turno. ¡Hasta pronto!</textarea>
+    <div class="sec-ttl">Pacientes con fecha asignada</div>
+    <div id="s-masivo-lista"></div>
+  </div>
 </div>
 
 <div id="view-ia" class="view">
@@ -1619,7 +1662,7 @@ function rpts(){
   if(!fil.length){document.getElementById('plist').innerHTML='<div style="text-align:center;color:var(--mt);padding:36px 0">Sin resultados</div>';return;}
   document.getElementById('plist').innerHTML=fil.map(p=>{
     const d=showDx(p),c=dc2(d),edad=p.fecha_nac?calcEdad(p.fecha_nac):(p.edad||'');
-    return '<div class="pc" onclick="showPt(\''+esc(p.id)+'\')"><div class="av" style="background:'+c+'22;color:'+c+'">'+ini(p.id)+'</div><div class="pi"><div class="pn">'+p.nombre+(p.obito?' <span style="color:#cc0000;font-size:10px;font-weight:800;letter-spacing:.5px">ÓBITO</span>':'')+'</div><div class="pm">'+(edad?edad+' a\u00f1os \u00b7 ':'')+( p.cobertura||'Sin cobertura')+'</div></div><div class="pbadge" style="background:'+c+'22;color:'+c+'">'+dl2(d)+'</div></div>';
+    return '<div class="pc" onclick="showPt(\''+esc(p.id)+'\')"><div class="av" style="background:'+c+'22;color:'+c+'">'+ini(p.id)+'</div><div class="pi"><div class="pn">'+p.nombre+(p.obito?' <span style="color:#cc0000;font-size:10px;font-weight:800;letter-spacing:.5px">ÓBITO</span>':'')+(p.alta?' <span style="color:#22D3A3;font-size:10px;font-weight:800;letter-spacing:.5px">ALTA</span>':'')+'</div><div class="pm">'+(edad?edad+' a\u00f1os \u00b7 ':'')+( p.cobertura||'Sin cobertura')+'</div></div><div class="pbadge" style="background:'+c+'22;color:'+c+'">'+dl2(d)+'</div></div>';
   }).join('');
 }
 
@@ -1791,6 +1834,22 @@ function delNota(pacId, notaIdx, isBase){
   showPt(pacId);toast('Consulta eliminada');
 }
 
+function marcarAlta(id){
+  const p=getPat(id);if(!p)return;
+  const yaAlta=p.alta;
+  if(!confirm(yaAlta?'¿Quitar la marca de Alta?':'¿Marcar a '+p.nombre+' como Alta?'))return;
+  if(id.startsWith('new_')){
+    const idx=extraPats.findIndex(e=>e.id===id);
+    if(idx!==-1){extraPats[idx].alta=!yaAlta;S('ep',extraPats);}
+  } else {
+    if(!patEdits[id])patEdits[id]={};
+    patEdits[id].alta=!yaAlta;
+    S('pe',patEdits);
+  }
+  showPt(id);
+  toast(yaAlta?'Marca de Alta quitada':'Marcado como Alta');
+}
+
 function marcarObito(id){
   const p=getPat(id);if(!p)return;
   const yaObito=p.obito;
@@ -1878,6 +1937,10 @@ function showPt(id){
   const adlbl=ce('div');adlbl.style.cssText='font-size:11px;color:var(--mt);margin-bottom:6px';
   adlbl.textContent=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
   const ta=ce('textarea');ta.id='nc-'+id;ta.placeholder='Notas de la consulta de hoy...';
+  // Restaurar borrador si existe
+  const draft=localStorage.getItem('na4_draft_'+id);
+  if(draft){ta.value=draft;ta.style.borderColor='var(--am)';}
+  ta.oninput=function(){localStorage.setItem('na4_draft_'+id,ta.value);ta.style.borderColor=ta.value?'var(--am)':'';};
   const sb=ce('button','btnp');sb.textContent='Guardar consulta';sb.onclick=function(){addNota(id);};
   addbox.appendChild(adlbl);addbox.appendChild(ta);addbox.appendChild(sb);det.appendChild(addbox);
   const rb=ce('button','btnia');rb.style.cssText='margin-top:8px';rb.textContent='🎙️ Grabar consulta y resumir con IA';
@@ -1943,7 +2006,7 @@ function makeFieldBlock(pacId,field,label,val){
 }
 
 
-function addNota(id){const ta=document.getElementById('nc-'+id);const txt=ta?.value.trim();if(!txt)return;const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();if(!notas2[id])notas2[id]=[];notas2[id].push({fecha:f,texto:txt});S('n2',notas2);showPt(id);toast('Consulta guardada');}
+function addNota(id){const ta=document.getElementById('nc-'+id);const txt=ta?.value.trim();if(!txt)return;const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();if(!notas2[id])notas2[id]=[];notas2[id].push({fecha:f,texto:txt});S('n2',notas2);localStorage.removeItem('na4_draft_'+id);showPt(id);toast('Consulta guardada');}
 
 // ── RESUMEN DE CONSULTA CON IA (grabación de voz) ─────────────
 function renderResumenIA(id){
@@ -2466,6 +2529,167 @@ function generarReporte(tipo){
   });
   html+='</div>';
   cont.innerHTML=html;
+}
+
+// ── SECRETARI@ ──────────────────────────────────────────────────
+let llamados=L('sec_llamados',[]);
+
+function secTab(t){
+  document.querySelectorAll('.stab').forEach(b=>b.classList.toggle('stab-on',b.dataset.s===t));
+  document.querySelectorAll('.spanel').forEach(p=>p.style.display='none');
+  document.getElementById('s-'+t).style.display='';
+}
+
+function buildSecre(){
+  secTab('wa');
+  buildSecreWA();
+  buildSecreContactar();
+  buildSecreLlamados();
+  buildSecreMasivo();
+}
+
+function buildSecreWA(){
+  const hoy=new Date();
+  const items=Object.entries(nextApps).map(([id,fecha])=>{
+    const p=getPat(id);if(!p||p.obito)return null;
+    const partes=(fecha||'').split('/');
+    const d=partes.length===3?new Date(+partes[2],+partes[1]-1,+partes[0]):null;
+    if(!d)return null;
+    const diff=Math.round((d-hoy)/(1000*60*60*24));
+    const waSent=waEnviados[id];
+    return {id,p,fecha,diff,waSent};
+  }).filter(Boolean).sort((a,b)=>a.diff-b.diff);
+
+  if(!items.length){document.getElementById('s-wa-lista').innerHTML='<div style="color:var(--mt);font-size:13px;padding:16px 0">Sin pacientes con fecha de próxima consulta</div>';return;}
+
+  document.getElementById('s-wa-lista').innerHTML=items.map(x=>{
+    const color=x.diff<0?'var(--rd)':x.diff===0?'var(--am)':'var(--gn)';
+    const label=x.diff<0?'Venció hace '+Math.abs(x.diff)+' días':x.diff===0?'Hoy':'En '+x.diff+' días';
+    const enviado=x.waSent;
+    return '<div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 13px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      +'<div onclick="showPt(\''+x.id+'\');sv(\'detail\')" style="flex:1;cursor:pointer">'
+      +'<div style="font-size:13px;font-weight:600">'+x.p.nombre+'</div>'
+      +'<div style="font-size:11px;color:var(--mt)">'+x.fecha+(x.p.telefono?' · 📱 '+x.p.telefono:'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
+      +'<span style="font-size:11px;font-weight:700;color:'+color+'">'+label+'</span>'
+      +(enviado?'<span style="font-size:10px;color:var(--gn)">✓ Enviado</span>':'')
+      +'<button onclick="enviarWA(\''+x.id+'\')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">WhatsApp</button>'
+      +'</div></div></div>';
+  }).join('');
+}
+
+function buildSecreContactar(){
+  // Pacientes atendidos 2024-hoy sin fecha próxima ni WA enviado
+  const sinContactar=[];
+  const idsConFecha=new Set(Object.keys(nextApps));
+  const idsConWA=new Set(Object.keys(waEnviados));
+
+  // Buscar en notas2 y cobros
+  const pidsAtendidos=new Set();
+  Object.entries(notas2).forEach(([pid,ns])=>{
+    ns.forEach(n=>{
+      const a=parseInt((n.fecha||'').match(/\b(20\d\d)\b/)?.[1]||'0');
+      if(a>=2024)pidsAtendidos.add(pid);
+    });
+  });
+  cobros.forEach(c=>{
+    if(!c.pacienteId)return;
+    const p=c.fecha?.split('/');
+    const a=p&&p.length===3?parseInt(p[2]):0;
+    if(a>=2024)pidsAtendidos.add(c.pacienteId);
+  });
+
+  pidsAtendidos.forEach(pid=>{
+    if(idsConFecha.has(pid)||idsConWA.has(pid))return;
+    const p=getPat(pid);
+    if(!p||p.obito||p.alta)return;
+    sinContactar.push(p);
+  });
+
+  sinContactar.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  const lista=document.getElementById('s-cont-lista');
+  if(!sinContactar.length){lista.innerHTML='<div style="color:var(--mt);font-size:13px;padding:16px 0">¡Todos los pacientes ya fueron contactados! 🎉</div>';return;}
+
+  lista.innerHTML='<div style="font-size:12px;color:var(--mt);margin-bottom:8px">'+sinContactar.length+' pacientes</div>'
+    +sinContactar.map(p=>'<div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div onclick="showPt(\''+p.id+'\');sv(\'detail\')" style="flex:1;cursor:pointer">'
+      +'<div style="font-size:13px;font-weight:600">'+p.nombre+'</div>'
+      +'<div style="font-size:11px;color:var(--mt)">'+(p.telefono||'Sin teléfono')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px">'
+      +(p.telefono?'<a href="https://wa.me/54'+p.telefono.replace(/\D/g,'')+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WA</a>':'')
+      +'<button onclick="showPt(\''+p.id+'\');sv(\'detail\')" style="background:none;border:1px solid var(--bd);color:var(--mt);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer">Ficha</button>'
+      +'</div></div>'
+    ).join('');
+}
+
+function buildSecreLlamados(){
+  const lista=document.getElementById('s-llam-lista');
+  llamados=L('sec_llamados',[]);
+  if(!llamados.length){lista.innerHTML='<div style="color:var(--mt);font-size:13px;padding:12px 0">Sin llamados pendientes</div>';return;}
+  lista.innerHTML=llamados.map((l,i)=>'<div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center">'
+    +'<div><div style="font-size:13px;font-weight:600">'+l.nombre+'</div>'
+    +'<div style="font-size:11px;color:var(--mt)">'+(l.tel||'Sin tel')+(l.nota?' · '+l.nota:'')+'</div>'
+    +'<div style="font-size:10px;color:var(--mt2)">'+l.fecha+'</div></div>'
+    +'<div style="display:flex;gap:6px">'
+    +(l.tel?'<a href="https://wa.me/54'+l.tel.replace(/\D/g,'')+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WA</a>':'')
+    +'<button onclick="eliminarLlamado('+i+')" style="background:none;border:1px solid rgba(251,44,91,.3);color:var(--rd);padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer">✕</button>'
+    +'</div></div>'
+  ).join('');
+}
+
+function agregarLlamado(){
+  const nombre=prompt('Nombre del paciente que llamó:','');if(!nombre)return;
+  const tel=prompt('Teléfono (opcional):','');
+  const nota=prompt('Nota (ej: quiere turno urgente):','');
+  llamados=L('sec_llamados',[]);
+  llamados.unshift({nombre:nombre.trim(),tel:(tel||'').trim(),nota:(nota||'').trim(),fecha:new Date().toLocaleDateString('es-AR')});
+  S('sec_llamados',llamados);
+  buildSecreLlamados();
+  toast('Llamado registrado');
+}
+
+function eliminarLlamado(i){
+  if(!confirm('¿Eliminar este llamado?'))return;
+  llamados=L('sec_llamados',[]);
+  llamados.splice(i,1);
+  S('sec_llamados',llamados);
+  buildSecreLlamados();
+}
+
+function buildSecreMasivo(){
+  const items=Object.entries(nextApps).map(([id,fecha])=>{
+    const p=getPat(id);if(!p||p.obito)return null;
+    return {id,p,fecha};
+  }).filter(Boolean).sort((a,b)=>a.p.nombre.localeCompare(b.p.nombre));
+
+  document.getElementById('s-masivo-lista').innerHTML=items.map(x=>'<div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center">'
+    +'<div><div style="font-size:13px;font-weight:600">'+x.p.nombre+'</div>'
+    +'<div style="font-size:11px;color:var(--mt)">'+x.fecha+(x.p.telefono?' · '+x.p.telefono:'')+'</div></div>'
+    +'<button onclick="enviarMasivo(\''+x.id+'\')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Enviar</button>'
+    +'</div>'
+  ).join('');
+}
+
+function enviarMasivo(id){
+  const p=getPat(id);if(!p)return;
+  const fecha=nextApps[id]||'';
+  const template=document.getElementById('s-msg-template').value;
+  const nombre=p.nombre.split(',')[0].trim();
+  const partes=fecha.split('/');
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaFmt=partes.length===3?partes[0]+' de '+(meses[parseInt(partes[1])-1]||partes[1]):fecha;
+  const msg=template.replace(/{nombre}/g,nombre).replace(/{fecha}/g,fechaFmt);
+  const tel=(p.telefono||'').replace(/\D/g,'');
+  const telArg=tel?(tel.startsWith('54')?tel:'54'+tel):'';
+  const url='https://wa.me/'+telArg+'?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
+  waEnviados[id]=new Date().toLocaleDateString('es-AR');
+  S('wa_env',waEnviados);
+  buildHome();
 }
 
 function buildStats(){
