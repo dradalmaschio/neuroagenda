@@ -298,6 +298,36 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   </div>
 </div>
 
+<div id="doc-login" style="display:none;position:fixed;inset:0;background:#0D0A1E;z-index:99998;align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(ellipse at 20% 0%,#2D1060 0%,transparent 60%)">
+  <div style="background:#18112E;border:1px solid rgba(176,107,255,.22);border-radius:18px;padding:28px 22px;width:100%;max-width:360px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">🧠</div>
+    <div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#B06BFF,#F472B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px">NeuroAgenda</div>
+    <div style="font-size:12px;color:#9B84CC;margin-bottom:24px">Dra. Dal Maschio</div>
+    <label style="text-align:left;font-size:12px;color:#9B84CC;display:block;margin-bottom:4px">Contraseña</label>
+    <div style="position:relative">
+      <input type="password" id="doc-pass" placeholder="••••" onkeydown="if(event.key==='Enter')docLogin()" style="width:100%;background:#0D0A1E;border:1.5px solid rgba(176,107,255,.22);color:#F0EAFF;border-radius:9px;font-size:20px;padding:12px 44px 12px 16px;font-family:inherit;outline:none;box-sizing:border-box;letter-spacing:4px;text-align:center">
+      <button onclick="var i=document.getElementById('doc-pass');i.type=i.type==='password'?'text':'password'" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9B84CC;cursor:pointer;font-size:16px">👁</button>
+    </div>
+    <div id="doc-err" style="color:#FB2C5B;font-size:12px;min-height:20px;margin:8px 0"></div>
+    <button onclick="docLogin()" style="background:linear-gradient(135deg,#B06BFF,#F472B6);color:#fff;border:none;padding:12px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;width:100%;font-family:inherit">Ingresar</button>
+  </div>
+</div>
+
+<div id="main-login" style="display:none;position:fixed;inset:0;background:#0D0A1E;z-index:99998;align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(ellipse at 20% 0%,#2D1060 0%,transparent 60%)">
+  <div style="background:#18112E;border:1px solid rgba(176,107,255,.25);border-radius:18px;padding:28px 22px;width:100%;max-width:360px;text-align:center">
+    <div style="font-size:36px;margin-bottom:8px">🧠</div>
+    <div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#B06BFF,#F472B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px">NeuroAgenda</div>
+    <div style="font-size:12px;color:#9B84CC;margin-bottom:24px">Dra. Dal Maschio</div>
+    <div style="position:relative">
+      <input type="password" id="main-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')mainLogin()"
+        style="width:100%;background:#0D0A1E;border:1.5px solid rgba(176,107,255,.22);color:#F0EAFF;border-radius:9px;font-size:18px;padding:12px 44px 12px 16px;font-family:inherit;outline:none;box-sizing:border-box;letter-spacing:4px;text-align:center">
+      <button onclick="var i=document.getElementById('main-pass');i.type=i.type==='password'?'text':'password'" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9B84CC;cursor:pointer;font-size:16px">👁</button>
+    </div>
+    <div id="main-err" style="color:#FB2C5B;font-size:12px;min-height:20px;margin:8px 0"></div>
+    <button onclick="mainLogin()" style="background:linear-gradient(135deg,#B06BFF,#F472B6);color:#fff;border:none;padding:12px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;width:100%;font-family:inherit">Ingresar</button>
+  </div>
+</div>
+
 <div id="view-home" class="view on">
   <div style="text-align:center;padding:10px 0 2px;margin-bottom:4px"><img src="https://assets.zyrosite.com/sntMAcVE5OEix3ph/cara-yoX3JBWEjPKwUUBd.gif" alt="" style="width:88px;height:88px;object-fit:contain;opacity:.6;border-radius:50%;filter:drop-shadow(0 0 14px rgba(56,189,248,.5)) hue-rotate(180deg)" onerror="this.style.display='none'"></div>
     <div class="sec">
@@ -398,7 +428,8 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
 
 <div id="view-fin" class="view">
   <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
-    <button onclick="document.getElementById('fin-chpass-ov').style.display='flex'" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer;padding:4px 0">🔐 Cambiar contraseña</button>
+    <button onclick="document.getElementById('fin-chpass-ov').style.display='flex'" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer;padding:4px 0">🔐 Cambiar contraseña Finanzas</button>
+    <button onclick="cambiarPassPrincipal()" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer;padding:4px 0">🔑 Cambiar contraseña app</button>
   </div>
   <div class="ftabs">
     <button class="ftab on" onclick="ftab('reg')">Ingresos</button>
@@ -493,6 +524,10 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
 </div>
 
 <div id="view-secre" class="view">
+  <!-- Solo visible para la doctora: cambiar contraseña de Sofía -->
+  <div id="sec-admin-bar" style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button onclick="abrirCambioPassSofia()" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer">🔐 Cambiar contraseña de Secretaria</button>
+  </div>
   <!-- Tabs internos de Secretari@ -->
   <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
     <button class="stab stab-on" data-s="wa" onclick="secTab('wa')">💬 WhatsApp</button>
@@ -838,13 +873,18 @@ function enviarWA(id){
   histWA.unshift({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),paciente:p.nombre,tel:p.telefono||'',msg});
   if(histWA.length>100)histWA=histWA.slice(0,100);
   S('wa_hist',histWA);
-  // Intentar abrir WA Business directamente
-  const intentUrl='intent://send?phone='+telArg+'&text='+encodeURIComponent(msg)+'#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end';
-  const a=document.createElement('a');
-  a.href=intentUrl;a.target='_blank';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function(){document.body.removeChild(a);},500);
+  // Abrir WhatsApp — wa.me para web (Sofía), intent para Android app (doctora)
+  const waUrlFinal='https://wa.me/'+telArg+'?text='+encodeURIComponent(msg);
+  if(window._sofiaMode){
+    window.open(waUrlFinal,'_blank');
+  } else {
+    const intentUrl='intent://send?phone='+telArg+'&text='+encodeURIComponent(msg)+'#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end';
+    const a=document.createElement('a');
+    a.href=intentUrl;a.target='_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){document.body.removeChild(a);},500);
+  }
   toast('Mensaje enviado y registrado');
 }
 
@@ -2638,7 +2678,7 @@ function buildSecreContactar(){
       +'<div style="font-size:11px;color:var(--mt)">'+(p.telefono||'Sin teléfono')+'</div>'
       +'</div>'
       +'<div style="display:flex;gap:6px">'
-      +(p.telefono?'<a href="https://wa.me/54'+p.telefono.replace(/\D/g,'')+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WA</a>':'')
+      +(p.telefono?'<a href="https://wa.me/54'+p.telefono.replace(/\D/g,'')+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;display:inline-block">WA</a>':'')
       +'<button onclick="showPt(\''+p.id+'\');sv(\'detail\')" style="background:none;border:1px solid var(--bd);color:var(--mt);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer">Ficha</button>'
       +'</div></div>'
     ).join('');
@@ -2648,27 +2688,57 @@ function buildSecreLlamados(){
   const lista=document.getElementById('s-llam-lista');
   llamados=L('sec_llamados',[]);
   if(!llamados.length){lista.innerHTML='<div style="color:var(--mt);font-size:13px;padding:12px 0">Sin llamados pendientes</div>';return;}
-  lista.innerHTML=llamados.map((l,i)=>'<div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center">'
-    +'<div><div style="font-size:13px;font-weight:600">'+l.nombre+'</div>'
-    +'<div style="font-size:11px;color:var(--mt)">'+(l.tel||'Sin tel')+(l.nota?' · '+l.nota:'')+'</div>'
-    +'<div style="font-size:10px;color:var(--mt2)">'+l.fecha+'</div></div>'
-    +'<div style="display:flex;gap:6px">'
-    +(l.tel?'<a href="https://wa.me/54'+l.tel.replace(/\D/g,'')+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WA</a>':'')
-    +'<button onclick="eliminarLlamado('+i+')" style="background:none;border:1px solid rgba(251,44,91,.3);color:var(--rd);padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer">✕</button>'
-    +'</div></div>'
-  ).join('');
+  lista.innerHTML=llamados.map(function(l,i){
+    const tel=(l.tel||'').replace(/\D/g,'');
+    const telWA=tel?'54'+tel:'';
+    return '<div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600">'+l.nombre+'</div>'
+      +(l.tel?'<div style="font-size:12px;color:var(--mt);margin-top:2px">📱 '+l.tel+'</div>':'')
+      +(l.nota?'<div style="font-size:12px;color:var(--tx);margin-top:3px">'+l.nota+'</div>':'')
+      +'<div style="font-size:10px;color:var(--mt2);margin-top:4px">'+l.fecha+(l.hora?' · '+l.hora:'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">'
+      +(telWA?'<a href="https://wa.me/'+telWA+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WA</a>':'')
+      +'<div style="display:flex;gap:5px">'
+      +'<button onclick="editarLlamado('+i+')" style="background:none;border:1px solid var(--bd);color:var(--mt);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✎</button>'
+      +'<button onclick="eliminarLlamado('+i+')" style="background:none;border:1px solid rgba(251,44,91,.3);color:var(--rd);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✕</button>'
+      +'</div></div></div></div>';
+  }).join('');
 }
 
-function agregarLlamado(){
-  const nombre=prompt('Nombre del paciente que llamó:','');if(!nombre)return;
-  const tel=prompt('Teléfono (opcional):','');
-  const nota=prompt('Nota (ej: quiere turno urgente):','');
-  llamados=L('sec_llamados',[]);
-  llamados.unshift({nombre:nombre.trim(),tel:(tel||'').trim(),nota:(nota||'').trim(),fecha:new Date().toLocaleDateString('es-AR')});
-  S('sec_llamados',llamados);
-  buildSecreLlamados();
-  toast('Llamado registrado');
+function abrirModalLlamado(idx){
+  const l=idx>=0?(L('sec_llamados',[])[idx]||{}):{};
+  const ov=document.getElementById('modal-llamado');
+  document.getElementById('ml-idx').value=idx;
+  document.getElementById('ml-nombre').value=l.nombre||'';
+  document.getElementById('ml-tel').value=l.tel||'';
+  document.getElementById('ml-nota').value=l.nota||'';
+  ov.style.display='flex';
+  setTimeout(()=>document.getElementById('ml-nombre').focus(),80);
 }
+function guardarLlamado(){
+  const idx=parseInt(document.getElementById('ml-idx').value);
+  const nombre=document.getElementById('ml-nombre').value.trim();
+  if(!nombre){alert('El nombre es obligatorio');return;}
+  const entry={
+    nombre,
+    tel:document.getElementById('ml-tel').value.trim(),
+    nota:document.getElementById('ml-nota').value.trim(),
+    fecha:new Date().toLocaleDateString('es-AR'),
+    hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})
+  };
+  llamados=L('sec_llamados',[]);
+  if(idx>=0){llamados[idx]={...llamados[idx],...entry,fecha:llamados[idx].fecha,hora:llamados[idx].hora};}
+  else{llamados.unshift(entry);}
+  S('sec_llamados',llamados);
+  document.getElementById('modal-llamado').style.display='none';
+  buildSecreLlamados();
+  toast(idx>=0?'Llamado actualizado':'Llamado registrado');
+}
+
+function agregarLlamado(){abrirModalLlamado(-1);}
+function editarLlamado(i){abrirModalLlamado(i);}
 
 function eliminarLlamado(i){
   if(!confirm('¿Eliminar este llamado?'))return;
@@ -2791,6 +2861,53 @@ function checkTurnosProximos(){
   });
 }
 
+function docLogin(){
+  const pass=document.getElementById('doc-pass').value;
+  const okPass=localStorage.getItem('doc_pass')||'44';
+  if(pass===okPass){
+    localStorage.setItem('doc_session','1');
+    document.getElementById('doc-login').style.display='none';
+  } else {
+    document.getElementById('doc-err').textContent='Contraseña incorrecta';
+    document.getElementById('doc-pass').value='';
+    document.getElementById('doc-pass').focus();
+  }
+}
+// Verificar sesión al cargar (solo para acceso normal, no Sofia)
+(function(){
+  if(location.search.includes('sofia')||location.hash.includes('sofia'))return;
+  if(localStorage.getItem('doc_session')!=='1'){
+    document.getElementById('doc-login').style.display='flex';
+    setTimeout(()=>document.getElementById('doc-pass').focus(),100);
+  }
+})();
+
+function cambiarPassPrincipal(){
+  const actual=prompt('Contraseña actual:','');
+  if(actual===null)return;
+  const ok=localStorage.getItem('main_pass')||'44';
+  if(actual!==ok){alert('Contraseña actual incorrecta');return;}
+  const nueva=prompt('Nueva contraseña (mínimo 2 caracteres):','');
+  if(!nueva||nueva.length<2){alert('Contraseña demasiado corta');return;}
+  const conf=prompt('Confirmar nueva contraseña:','');
+  if(nueva!==conf){alert('Las contraseñas no coinciden');return;}
+  localStorage.setItem('main_pass',nueva);
+  toast('✓ Contraseña de la app actualizada');
+}
+
+function mainLogin(){
+  const pass=document.getElementById('main-pass').value;
+  const ok=localStorage.getItem('main_pass')||'44';
+  if(pass===ok){
+    localStorage.setItem('main_session','1');
+    document.getElementById('main-login').style.display='none';
+  } else {
+    document.getElementById('main-err').textContent='Contraseña incorrecta';
+    document.getElementById('main-pass').value='';
+    document.getElementById('main-pass').focus();
+  }
+}
+
 // ── MODO SECRETARIA ─────────────────────────────────────────────
 function sofiaLogin(){
   var u=document.getElementById('sl-u').value.trim();
@@ -2800,9 +2917,30 @@ function sofiaLogin(){
   if(u===ou&&p===op){localStorage.setItem('sec_session','1');activarModoSofia();}
   else{document.getElementById('sl-e').textContent='Usuario o contraseña incorrectos';document.getElementById('sl-p').value='';}
 }
+function abrirCambioPassSofia(){
+  document.getElementById('cp-user').value=localStorage.getItem('sec_user')||'sofia';
+  document.getElementById('cp-new').value='';
+  document.getElementById('cp-conf').value='';
+  document.getElementById('cp-err').textContent='';
+  document.getElementById('modal-pass-sofia').style.display='flex';
+}
+function guardarPassSofia(){
+  const nw=document.getElementById('cp-new').value;
+  const conf=document.getElementById('cp-conf').value;
+  const err=document.getElementById('cp-err');
+  if(nw.length<4){err.textContent='La contraseña debe tener al menos 4 caracteres';return;}
+  if(nw!==conf){err.textContent='Las contraseñas no coinciden';return;}
+  localStorage.setItem('sec_pass',nw);
+  document.getElementById('modal-pass-sofia').style.display='none';
+  toast('✓ Contraseña de Secretaria actualizada');
+}
+
 function activarModoSofia(){
   window._sofiaMode=true;
   document.body.classList.add('sofia-mode');
+  // Ocultar botón cambio de contraseña
+  const bar=document.getElementById('sec-admin-bar');
+  if(bar)bar.style.display='none';
   document.getElementById('sofia-login').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){
     var txt=t.textContent.trim();
@@ -2816,6 +2954,15 @@ function activarModoSofia(){
   if(!(location.search.includes('sofia')||location.hash.includes('sofia')))return;
   if(localStorage.getItem('sec_session')==='1'){setTimeout(activarModoSofia,100);return;}
   document.getElementById('sofia-login').style.display='flex';
+})();
+
+// Login principal (modo doctora)
+(function(){
+  if(location.search.includes('sofia')||location.hash.includes('sofia'))return;
+  if(localStorage.getItem('main_session')!=='1'){
+    document.getElementById('main-login').style.display='flex';
+    setTimeout(function(){document.getElementById('main-pass').focus();},80);
+  }
 })();
 
 buildHome();buildPills();rpts();buildAg();buildStats();renderFin();
@@ -3113,6 +3260,7 @@ async function dbxRestoreIfNeeded(){
     if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
+    nextApps=L('napp',{}); waEnviados=L('wa_env',{}); llamados=L('sec_llamados',[]);
     dbxSetStatus('ok','Dropbox: datos restaurados ✓');
     buildHome(); rpts();
   } catch(e){
@@ -3210,6 +3358,36 @@ window.addEventListener('load', function(){
   <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:18px 18px 0 0;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="padding:14px 16px;font-size:13px;font-weight:700;color:var(--mt);border-bottom:1px solid var(--bd)" id="dx-panel-ttl">Seleccioná un diagnóstico</div>
     <div id="dx-panel-lista"></div>
+  </div>
+</div>
+
+<div id="modal-pass-sofia" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:4000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg);border-radius:18px;padding:24px 20px;width:100%;max-width:360px;border:1px solid var(--bd)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px">🔐 Contraseña de Secretaria</div>
+    <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Usuario (no cambia)</label>
+    <input type="text" id="cp-user" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--mt);font-size:14px;box-sizing:border-box;margin-bottom:10px" readonly>
+    <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Nueva contraseña</label>
+    <input type="password" id="cp-new" placeholder="Mínimo 4 caracteres" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;margin-bottom:10px">
+    <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Confirmar</label>
+    <input type="password" id="cp-conf" placeholder="Repetí la contraseña" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;margin-bottom:8px">
+    <div id="cp-err" style="color:var(--rd);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <button class="btnp" onclick="guardarPassSofia()">Guardar contraseña</button>
+    <button onclick="document.getElementById('modal-pass-sofia').style.display='none'" style="width:100%;background:none;border:none;color:var(--mt);padding:10px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px">Cancelar</button>
+  </div>
+</div>
+
+<div id="modal-llamado" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:4000;align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg);border-radius:18px 18px 0 0;padding:22px 18px 32px;width:100%;max-width:480px;border-top:1px solid var(--bd)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px" id="ml-ttl">Registrar llamado</div>
+    <input type="hidden" id="ml-idx" value="-1">
+    <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Nombre *</label>
+    <input type="text" id="ml-nombre" placeholder="Nombre del paciente" style="width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;margin-bottom:10px">
+    <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Teléfono</label>
+    <input type="text" id="ml-tel" placeholder="11-1234-5678" inputmode="tel" style="width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;margin-bottom:10px">
+    <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:4px">Nota</label>
+    <input type="text" id="ml-nota" placeholder="Ej: quiere turno urgente, PAMI..." style="width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-size:14px;box-sizing:border-box;margin-bottom:12px">
+    <button class="btnp" onclick="guardarLlamado()">Guardar</button>
+    <button onclick="document.getElementById('modal-llamado').style.display='none'" style="width:100%;background:none;border:none;color:var(--mt);padding:10px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px">Cancelar</button>
   </div>
 </div>
 
