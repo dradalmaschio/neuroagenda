@@ -281,6 +281,23 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
 
 <main>
 
+<div id="sofia-login" style="display:none;position:fixed;inset:0;background:#0D0A1E;z-index:99999;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,sans-serif">
+  <div style="background:#18112E;border:1px solid rgba(176,107,255,.22);border-radius:18px;padding:28px 22px;width:100%;max-width:360px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">🧠</div>
+    <div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#B06BFF,#F472B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px">NeuroAgenda</div>
+    <div style="font-size:12px;color:#9B84CC;margin-bottom:24px">Acceso Secretaria</div>
+    <label style="text-align:left;font-size:12px;color:#9B84CC;display:block;margin-bottom:4px">Usuario</label>
+    <input id="sl-u" type="text" placeholder="usuario" autocomplete="off" style="width:100%;background:#0D0A1E;border:1.5px solid rgba(176,107,255,.22);color:#F0EAFF;border-radius:9px;font-size:14px;padding:10px 12px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px">
+    <label style="text-align:left;font-size:12px;color:#9B84CC;display:block;margin-bottom:4px">Contraseña</label>
+    <div style="position:relative;margin-bottom:0">
+      <input id="sl-p" type="password" placeholder="contraseña" onkeydown="if(event.key==='Enter')sofiaLogin()" style="width:100%;background:#0D0A1E;border:1.5px solid rgba(176,107,255,.22);color:#F0EAFF;border-radius:9px;font-size:14px;padding:10px 40px 10px 12px;font-family:inherit;outline:none;box-sizing:border-box">
+      <button onclick="var i=document.getElementById('sl-p');i.type=i.type==='password'?'text':'password'" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9B84CC;cursor:pointer;font-size:16px">👁</button>
+    </div>
+    <div id="sl-e" style="color:#FB2C5B;font-size:12px;min-height:20px;margin:8px 0"></div>
+    <button onclick="sofiaLogin()" style="background:linear-gradient(135deg,#B06BFF,#F472B6);color:#fff;border:none;padding:12px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;width:100%;font-family:inherit;margin-top:2px">Ingresar</button>
+  </div>
+</div>
+
 <div id="view-home" class="view on">
   <div style="text-align:center;padding:10px 0 2px;margin-bottom:4px"><img src="https://assets.zyrosite.com/sntMAcVE5OEix3ph/cara-yoX3JBWEjPKwUUBd.gif" alt="" style="width:88px;height:88px;object-fit:contain;opacity:.6;border-radius:50%;filter:drop-shadow(0 0 14px rgba(56,189,248,.5)) hue-rotate(180deg)" onerror="this.style.display='none'"></div>
     <div class="sec">
@@ -2772,6 +2789,31 @@ function checkTurnosProximos(){
     }
   });
 }
+
+// ── MODO SECRETARIA ─────────────────────────────────────────────
+function sofiaLogin(){
+  var u=document.getElementById('sl-u').value.trim();
+  var p=document.getElementById('sl-p').value;
+  var ou=localStorage.getItem('sec_user')||'sofia';
+  var op=localStorage.getItem('sec_pass')||'sofia2024';
+  if(u===ou&&p===op){localStorage.setItem('sec_session','1');activarModoSofia();}
+  else{document.getElementById('sl-e').textContent='Usuario o contraseña incorrectos';document.getElementById('sl-p').value='';}
+}
+function activarModoSofia(){
+  document.getElementById('sofia-login').style.display='none';
+  document.querySelectorAll('.tab').forEach(function(t){
+    var txt=t.textContent.trim();
+    if(txt==='Finanzas'||txt==='Diagnósticos'||txt==='Resumen'||txt.includes('IA'))t.style.display='none';
+  });
+  var nav=document.querySelector('.nav-inner');
+  if(nav){var btn=document.createElement('button');btn.textContent='Salir';btn.style.cssText='background:none;border:none;color:#9B84CC;font-size:11px;cursor:pointer;font-family:inherit';btn.onclick=function(){if(confirm('¿Cerrar sesión de Sofía?')){localStorage.removeItem('sec_session');location.reload();}};nav.appendChild(btn);}
+  sv('secre');buildSecre();
+}
+(function(){
+  if(!(location.search.includes('sofia')||location.hash.includes('sofia')))return;
+  if(localStorage.getItem('sec_session')==='1'){setTimeout(activarModoSofia,100);return;}
+  document.getElementById('sofia-login').style.display='flex';
+})();
 
 buildHome();buildPills();rpts();buildAg();buildStats();renderFin();
 initNotifs();
