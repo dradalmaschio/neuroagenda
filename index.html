@@ -713,6 +713,7 @@ function getPat(id){return allPats().find(p=>p.id===id);}
 function showDx(p){return p.dx_propio||p.dx_ia||p.diagnostico||'sin_diagnostico';}
 
 function sv(v){
+  if(window._sofiaMode&&(v==='fin'||v==='dx'||v==='stats'||v==='ia')){toast('Acceso restringido');return;}
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));
   document.getElementById('view-'+v)?.classList.add('on');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -2800,6 +2801,7 @@ function sofiaLogin(){
   else{document.getElementById('sl-e').textContent='Usuario o contraseña incorrectos';document.getElementById('sl-p').value='';}
 }
 function activarModoSofia(){
+  window._sofiaMode=true;
   document.getElementById('sofia-login').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){
     var txt=t.textContent.trim();
