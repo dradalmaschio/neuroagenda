@@ -2678,7 +2678,7 @@ function buildSecreContactar(){
       +'<div style="font-size:11px;color:var(--mt)">'+(p.telefono||'Sin teléfono')+'</div>'
       +'</div>'
       +'<div style="display:flex;gap:6px">'
-      +(p.telefono?'<a href="https://wa.me/54'+p.telefono.replace(/\D/g,'')+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;display:inline-block">WA</a>':'')
+      +(p.telefono?'<button onclick="abrirWAPorModo(\'54\'+\''+p.telefono.replace(/\D/g,'')+'\')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">WA</button>':'')
       +'<button onclick="showPt(\''+p.id+'\');sv(\'detail\')" style="background:none;border:1px solid var(--bd);color:var(--mt);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer">Ficha</button>'
       +'</div></div>'
     ).join('');
@@ -2699,7 +2699,7 @@ function buildSecreLlamados(){
       +'<div style="font-size:10px;color:var(--mt2);margin-top:4px">'+l.fecha+(l.hora?' · '+l.hora:'')+'</div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">'
-      +(telWA?'<a href="https://wa.me/'+telWA+'" target="_blank" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WA</a>':'')
+      +(telWA?'<button onclick="abrirWAPorModo(\''+telWA+'\')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">WA</button>':'')
       +'<div style="display:flex;gap:5px">'
       +'<button onclick="editarLlamado('+i+')" style="background:none;border:1px solid var(--bd);color:var(--mt);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✎</button>'
       +'<button onclick="eliminarLlamado('+i+')" style="background:none;border:1px solid rgba(251,44,91,.3);color:var(--rd);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✕</button>'
@@ -2917,6 +2917,19 @@ function sofiaLogin(){
   if(u===ou&&p===op){localStorage.setItem('sec_session','1');activarModoSofia();}
   else{document.getElementById('sl-e').textContent='Usuario o contraseña incorrectos';document.getElementById('sl-p').value='';}
 }
+function abrirWAPorModo(tel,texto){
+  const msg=texto||'';
+  if(window._sofiaMode){
+    const url=msg?('https://wa.me/'+tel+'?text='+encodeURIComponent(msg)):'https://wa.me/'+tel;
+    window.open(url,'_blank');
+  } else {
+    const intent='intent://send?phone='+tel+(msg?'&text='+encodeURIComponent(msg):'')+'#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end';
+    const a=document.createElement('a');a.href=intent;a.target='_blank';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);},500);
+  }
+}
+
 function abrirCambioPassSofia(){
   document.getElementById('cp-user').value=localStorage.getItem('sec_user')||'sofia';
   document.getElementById('cp-new').value='';
