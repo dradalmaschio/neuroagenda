@@ -525,8 +525,12 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
 
 <div id="view-secre" class="view">
   <!-- Solo visible para la doctora: cambiar contraseña de Sofía -->
-  <div id="sec-admin-bar" style="display:flex;justify-content:flex-end;margin-bottom:10px">
-    <button onclick="abrirCambioPassSofia()" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer">🔐 Cambiar contraseña de Secretaria</button>
+  <div id="sec-admin-bar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="display:flex;gap:6px">
+      <button onclick="sincronizarSecre()" style="background:none;border:1px solid var(--bd);color:var(--mt);font-size:11px;cursor:pointer;padding:4px 10px;border-radius:6px">🔄 Cargar</button>
+      <button onclick="dbxSaveNow&&dbxSaveNow().then(()=>toast('✓ Guardado en Dropbox'))" style="background:none;border:1px solid rgba(176,107,255,.3);color:var(--ac);font-size:11px;cursor:pointer;padding:4px 10px;border-radius:6px">☁️ Guardar</button>
+    </div>
+    <button onclick="abrirCambioPassSofia()" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer">🔐 Contraseña</button>
   </div>
   <!-- Tabs internos de Secretari@ -->
   <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
@@ -2928,6 +2932,20 @@ function abrirWAPorModo(tel,texto){
     document.body.appendChild(a);a.click();
     setTimeout(function(){document.body.removeChild(a);},500);
   }
+}
+
+async function sincronizarSecre(){
+  const btn=document.querySelector('#sec-admin-bar button');
+  if(btn){btn.textContent='⏳ Sincronizando...';btn.disabled=true;}
+  try{
+    await dbxRestoreIfNeeded();
+    // Recargar variables en memoria
+    extraPats=L('ep',[]); patEdits=L('pe',{}); notas2=L('n2',{}); turnos=L('tu',{});
+    cobros=L('co',[]); nextApps=L('napp',{}); waEnviados=L('wa_env',{}); llamados=L('sec_llamados',[]);
+    buildSecre();
+    toast('✓ Datos sincronizados');
+  }catch(e){toast('Error al sincronizar');}
+  if(btn){btn.textContent='🔄 Sincronizar';btn.disabled=false;}
 }
 
 function abrirCambioPassSofia(){
