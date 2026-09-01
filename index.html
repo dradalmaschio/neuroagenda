@@ -2841,6 +2841,9 @@ async function exportarTodo(){
     cobros:    L('co',[]),
     gastos:    L('ga',[]),
     resumenesIA: L('ria',{}),
+    nextApps:  L('napp',{}),
+    waEnviados: L('wa_env',{}),
+    secLlamados: L('sec_llamados',[]),
     patImgs:   patImgs,
   };
   const json = JSON.stringify(backup);
@@ -2917,6 +2920,9 @@ function importarTodo(){
         if(data.cobros)    S('co', data.cobros);
         if(data.gastos)    S('ga', data.gastos);
         if(data.resumenesIA) S('ria', data.resumenesIA);
+        if(data.nextApps)  S('napp', data.nextApps);
+        if(data.waEnviados) S('wa_env', data.waEnviados);
+        if(data.secLlamados) S('sec_llamados', data.secLlamados);
         // Reload state
         extraPats = L('ep',[]);patEdits=L('pe',{});dxPropio=L('dxp',{});dxIA=L('dxi',{});
         notas2=L('n2',{});turnos=L('tu',{});cobros=L('co',[]);gastos=L('ga',[]);resumenesIA=L('ria',{});
@@ -3102,6 +3108,8 @@ async function dbxRestoreIfNeeded(){
     S('ep',data.extraPats||[]); S('pe',data.patEdits||{}); S('dxp',data.dxPropio||{});
     S('dxi',data.dxIA||{}); S('n2',data.notas2||{}); S('tu',data.turnos||{});
     S('co',data.cobros||[]); S('ga',data.gastos||[]); S('ria',data.resumenesIA||{}); S('napp',data.nextApps||{});
+    if(data.waEnviados) S('wa_env',data.waEnviados);
+    if(data.secLlamados) S('sec_llamados',data.secLlamados);
     if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
