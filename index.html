@@ -408,7 +408,7 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
   <div style="margin-top:24px;padding-top:16px;border-top:1px dashed var(--bd);text-align:center;display:flex;gap:10px;justify-content:center">
     <button onclick="marcarObito(currentPatId)" style="background:none;border:1px solid #99000055;color:#990000;font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">✝ Óbito</button>
     <button onclick="marcarAlta(currentPatId)" style="background:none;border:1px solid rgba(34,211,163,.4);color:var(--gn);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">✓ Alta</button>
-    <button onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)55;color:var(--rd);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar paciente</button>
+    <button id="btn-delpat" onclick="delPat(currentPatId)" style="background:none;border:1px solid var(--rd)55;color:var(--rd);font-size:12px;padding:8px 20px;border-radius:var(--rs);cursor:pointer">🗑 Eliminar paciente</button>
   </div>
 </div>
 
@@ -650,10 +650,10 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <textarea id="pat-antec" placeholder="HTA, DBT, cirugías..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
     <label>Medicación actual</label>
     <textarea id="pat-meds" placeholder="Medicación habitual..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
-    <label>Notas iniciales</label>
-    <textarea id="pat-notas" placeholder="Motivo de consulta, antecedentes..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea>
-    <label>Diagnóstico</label>
-    <input type="text" id="pat-dx-propio" placeholder="Ej: Migraña, Parkinson, Alzheimer..." list="dx-sugerencias" autocomplete="off">
+    <div id="grp-pat-notas"><label>Notas iniciales</label>
+    <textarea id="pat-notas" placeholder="Motivo de consulta, antecedentes..." style="padding:9px;border-radius:var(--rs);min-height:60px;resize:vertical"></textarea></div>
+    <div id="grp-pat-dx"><label>Diagnóstico</label>
+    <input type="text" id="pat-dx-propio" placeholder="Ej: Migraña, Parkinson, Alzheimer..." list="dx-sugerencias" autocomplete="off"></div>
     <datalist id="dx-sugerencias"></datalist>
     <div class="mod-btns">
       <button class="bcancel" onclick="document.getElementById('ov-pat').classList.add('h')">Cancelar</button>
@@ -1636,11 +1636,11 @@ function savePat(){
   const id=document.getElementById('pat-id').value;
   const nombre=document.getElementById('pat-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio');return;}
-  const dxPTxt=document.getElementById('pat-dx-propio').value.trim();
+  const dxPTxt=window._sofiaMode?'':document.getElementById('pat-dx-propio').value.trim();
   const found=Object.entries(DL).find(([k,v])=>v.toLowerCase()===dxPTxt.toLowerCase());
-  const dxP=found?found[0]:dxPTxt;
+  const dxP=window._sofiaMode?'':(found?found[0]:dxPTxt);
   const dxI='';
-  const notaTxt=document.getElementById('pat-notas').value.trim();
+  const notaTxt=window._sofiaMode?'':document.getElementById('pat-notas').value.trim();
   const campos={nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim()};
   if(id){
     if(id.startsWith('new_')){
@@ -1653,16 +1653,20 @@ function savePat(){
       Object.assign(patEdits[id],campos);
       S('pe',patEdits);
     }
-    if(dxP){dxPropio[id]=dxP;S('dxp',dxPropio);}else{delete dxPropio[id];S('dxp',dxPropio);}
-    if(dxI){dxIA[id]=dxI;S('dxi',dxIA);}
-    if(notaTxt){const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();if(!notas2[id])notas2[id]=[];notas2[id].push({fecha:f,texto:notaTxt});S('n2',notas2);}
+    if(!window._sofiaMode){
+      if(dxP){dxPropio[id]=dxP;S('dxp',dxPropio);}else{delete dxPropio[id];S('dxp',dxPropio);}
+      if(dxI){dxIA[id]=dxI;S('dxi',dxIA);}
+      if(notaTxt){const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();if(!notas2[id])notas2[id]=[];notas2[id].push({fecha:f,texto:notaTxt});S('n2',notas2);}
+    }
     document.getElementById('ov-pat').classList.add('h');toast('Paciente actualizado');showPt(id);
   } else {
     const newId='new_'+Date.now();
     const newPat={id:newId,nombre,dni:document.getElementById('pat-dni').value.trim(),fecha_nac:document.getElementById('pat-fnac').value.trim(),cobertura:document.getElementById('pat-cob').value.trim(),telefono:document.getElementById('pat-tel').value.trim(),email:document.getElementById('pat-email').value.trim(),direccion:document.getElementById('pat-dir').value.trim(),antecedentes:document.getElementById('pat-antec').value.trim(),medicacion_actual:document.getElementById('pat-meds').value.trim(),diagnostico:dxI||'sin_diagnostico',confianza:'sin_datos',notas:[],edad:'',dx_propio:dxP,dx_ia:dxI};
-    if(dxP){dxPropio[newId]=dxP;S('dxp',dxPropio);}
-    if(dxI){dxIA[newId]=dxI;S('dxi',dxIA);}
-    if(notaTxt){const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();notas2[newId]=[{fecha:f,texto:notaTxt}];S('n2',notas2);}
+    if(!window._sofiaMode){
+      if(dxP){dxPropio[newId]=dxP;S('dxp',dxPropio);}
+      if(dxI){dxIA[newId]=dxI;S('dxi',dxIA);}
+      if(notaTxt){const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();notas2[newId]=[{fecha:f,texto:notaTxt}];S('n2',notas2);}
+    }
     extraPats.push(newPat);S('ep',extraPats);
     // Linkear cobros que tenían este nombre pero sin pacienteId
     const nombreNorm=nombre.toLowerCase().trim();
@@ -1849,6 +1853,7 @@ function saveField(pacId, field){
 }
 
 function editNota(pacId, notaIdx, isBase){
+  if(window._sofiaMode){toast('No tenés permiso para editar consultas');return;}
   let txt='';
   if(isBase){const p=getPat(pacId);txt=(p.notas||[])[notaIdx]?.texto||'';}
   else{txt=(notas2[pacId]||[])[notaIdx]?.texto||'';}
@@ -1885,6 +1890,7 @@ function saveNota(pacId, notaIdx, isBase){
 }
 
 function delNota(pacId, notaIdx, isBase){
+  if(window._sofiaMode){toast('No tenés permiso para eliminar consultas');return;}
   if(!confirm('¿Eliminar esta consulta?'))return;
   if(isBase){
     if(!patEdits[pacId])patEdits[pacId]={};
@@ -1929,6 +1935,7 @@ function marcarObito(id){
 }
 
 function delPat(id){
+  if(window._sofiaMode){toast('No tenés permiso para eliminar pacientes');return;}
   const p=getPat(id);if(!p)return;
   if(!confirm('¿Eliminar a '+p.nombre+'? Esta acción no se puede deshacer.'))return;
   if(id.startsWith('new_')){
@@ -2032,16 +2039,21 @@ function showPt(id){
       const nb=ce('div','nota-block');nb.id='nota_blk_'+id+'_'+(n.isBase?'b':'e')+n.idx;
       const nf=ce('div','nota-fecha');
       const nfspan=ce('span');nfspan.textContent=n.fecha;nf.appendChild(nfspan);
-      const nbts=ce('span');
-      const eb=ce('button','edit-btn');eb.textContent='✎ Editar';
-      eb.onclick=(function(ni,ib){return function(){editNota(id,ni,ib);};})(n.idx,n.isBase);
-      nbts.appendChild(eb);nf.appendChild(nbts);nb.appendChild(nf);
+      if(!window._sofiaMode){
+        const nbts=ce('span');
+        const eb=ce('button','edit-btn');eb.textContent='✎ Editar';
+        eb.onclick=(function(ni,ib){return function(){editNota(id,ni,ib);};})(n.idx,n.isBase);
+        nbts.appendChild(eb);nf.appendChild(nbts);
+      }
+      nb.appendChild(nf);
       const nt=ce('div','nota-txt');nt.textContent=n.txt;nb.appendChild(nt);
-      // Botón eliminar al pie de la nota, bien separado del editar
-      const dbwrap=ce('div');dbwrap.style.cssText='text-align:right;margin-top:10px;padding-top:8px;border-top:1px dashed var(--bd)';
-      const db=ce('button','edit-btn');db.style.cssText='font-size:10px;color:var(--rd);border-color:var(--rd)33;padding:2px 8px';db.textContent='🗑 Eliminar consulta';
-      db.onclick=(function(ni,ib){return function(){delNota(id,ni,ib);};})(n.idx,n.isBase);
-      dbwrap.appendChild(db);nb.appendChild(dbwrap);
+      if(!window._sofiaMode){
+        // Botón eliminar al pie de la nota, bien separado del editar
+        const dbwrap=ce('div');dbwrap.style.cssText='text-align:right;margin-top:10px;padding-top:8px;border-top:1px dashed var(--bd)';
+        const db=ce('button','edit-btn');db.style.cssText='font-size:10px;color:var(--rd);border-color:var(--rd)33;padding:2px 8px';db.textContent='🗑 Eliminar consulta';
+        db.onclick=(function(ni,ib){return function(){delNota(id,ni,ib);};})(n.idx,n.isBase);
+        dbwrap.appendChild(db);nb.appendChild(dbwrap);
+      }
       det.appendChild(nb);
     });
   } else {
@@ -2977,6 +2989,11 @@ function activarModoSofia(){
     var txt=t.textContent.trim();
     if(txt==='Finanzas'||txt==='Diagnósticos'||txt==='Resumen'||txt.includes('IA'))t.style.display='none';
   });
+  // Restringir permisos dentro de Pacientes: Sofía solo edita datos personales,
+  // antecedentes, medicación, óbito y alta — no consultas, diagnóstico ni borrado.
+  var elimBtn=document.getElementById('btn-delpat'); if(elimBtn)elimBtn.style.display='none';
+  var grpNotas=document.getElementById('grp-pat-notas'); if(grpNotas)grpNotas.style.display='none';
+  var grpDx=document.getElementById('grp-pat-dx'); if(grpDx)grpDx.style.display='none';
   var nav=document.querySelector('.nav-inner');
   if(nav){var btn=document.createElement('button');btn.textContent='Salir';btn.style.cssText='background:none;border:none;color:#9B84CC;font-size:11px;cursor:pointer;font-family:inherit';btn.onclick=function(){if(confirm('¿Cerrar sesión de Sofía?')){localStorage.removeItem('sec_session');location.reload();}};nav.appendChild(btn);}
   sv('secre');buildSecre();
