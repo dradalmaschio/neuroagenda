@@ -1742,7 +1742,12 @@ function setPacImgs(id,imgs){try{localStorage.setItem('na5_imgs_'+id,JSON.string
 
 function delImg(pacId,imgIdx){
   if(!confirm('¿Eliminar imagen?'))return;
-  const imgs=getPacImgs(pacId);imgs.splice(imgIdx,1);setPacImgs(pacId,imgs);showPt(pacId);
+  const imgs=getPacImgs(pacId);
+  const removed=imgs[imgIdx];
+  imgs.splice(imgIdx,1);setPacImgs(pacId,imgs);showPt(pacId);
+  if(removed&&removed.path&&dbxIsConnected()){
+    getDbxAccessToken().then(token=>{ if(token) dbxDeleteFile(token, removed.path); });
+  }
 }
 
 function comprimirImagen(file, maxW, quality, cb){
@@ -1762,23 +1767,91 @@ function comprimirImagen(file, maxW, quality, cb){
   reader.readAsDataURL(file);
 }
 
+// ── Fotos de pacientes en Dropbox ──────────────────────────────────
+// La foto completa se sube a Dropbox (sin límite práctico de espacio);
+// en el dispositivo solo queda guardada una miniatura chiquita para
+// que la grilla cargue rápido y sin ocupar memoria local.
+async function dbxUploadImageBlob(token, path, dataUrl){
+  const blob = await (await fetch(dataUrl)).blob();
+  const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer '+token,
+      'Content-Type':'application/octet-stream',
+      'Dropbox-API-Arg': JSON.stringify({path, mode:'add', autorename:true, mute:true})
+    },
+    body: blob
+  });
+  if(!res.ok) throw new Error('No se pudo subir la imagen a Dropbox');
+  const data = await res.json();
+  return data.path_lower || data.path_display || path;
+}
+async function dbxGetTempLink(token, path){
+  const res = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({path})
+  });
+  if(!res.ok) throw new Error('No se pudo obtener el enlace de la imagen');
+  const data = await res.json();
+  return data.link;
+}
+async function dbxDeleteFile(token, path){
+  try{
+    await fetch('https://api.dropboxapi.com/2/files/delete_v2', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({path})
+    });
+  }catch(e){ /* si falla el borrado en Dropbox, no bloqueamos al usuario */ }
+}
+function openImgDbx(img){
+  const preview = img.thumb || img.src || '';
+  openImg(preview);
+  if(img.path){
+    (async()=>{
+      try{
+        const token = await getDbxAccessToken();
+        if(!token) return;
+        const link = await dbxGetTempLink(token, img.path);
+        const im=document.getElementById('img-ov-src'); if(im) im.src=link;
+        const dl=document.getElementById('img-ov-dl'); if(dl) dl.href=link;
+      }catch(e){ /* se queda mostrando la miniatura */ }
+    })();
+  }
+}
+
 function addImgFromFile(pacId){
   const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
-  inp.onchange=e=>{
+  inp.onchange=async e=>{
     const files=Array.from(e.target.files);if(!files.length)return;
+    if(!dbxIsConnected()){
+      alert('Para subir fotos necesitás tener Dropbox conectado (así no ocupan espacio en el teléfono). Conectate desde el indicador de arriba e intentá de nuevo.');
+      return;
+    }
+    const token = await getDbxAccessToken();
+    if(!token){ alert('No se pudo conectar a Dropbox. Reconectá e intentá de nuevo.'); return; }
     const imgs=getPacImgs(pacId);
-    let pending=files.length;
-    files.forEach(file=>{
-      comprimirImagen(file, 1200, 0.75, dataUrl=>{
-        try{
-          imgs.push({src:dataUrl,name:file.name,fecha:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase()});
-          setPacImgs(pacId,imgs);
-        } catch(err){
-          alert('Sin espacio para guardar imagen. Borrá algunas fotos anteriores o exportá el backup primero.');
-        }
-        pending--;if(!pending)showPt(pacId);
+    for(const file of files){
+      await new Promise(resolve=>{
+        comprimirImagen(file, 1400, 0.75, fullDataUrl=>{
+          comprimirImagen(file, 220, 0.5, async thumbDataUrl=>{
+            try{
+              const ts=Date.now();
+              const safeName=(file.name||'foto.jpg').replace(/[^a-zA-Z0-9._-]/g,'_');
+              const path='/NeuroAgenda_imgs/'+pacId+'/'+ts+'_'+safeName;
+              const savedPath=await dbxUploadImageBlob(token, path, fullDataUrl);
+              imgs.push({path:savedPath,thumb:thumbDataUrl,name:file.name,fecha:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase()});
+              setPacImgs(pacId,imgs);
+            }catch(err){
+              alert('No se pudo subir la foto a Dropbox. Revisá la conexión e intentá de nuevo.');
+            }
+            resolve();
+          });
+        });
       });
-    });
+    }
+    showPt(pacId);
   };
   inp.click();
 }
@@ -1790,8 +1863,8 @@ function renderImgs(pacId){
     const thumb=document.createElement('div');
     thumb.className='img-thumb';
     const im=document.createElement('img');
-    im.src=img.src;im.alt=img.name||'';
-    im.onclick=function(){openImg(img.src);};
+    im.src=img.thumb||img.src;im.alt=img.name||'';
+    im.onclick=function(){openImgDbx(img);};
     const del=document.createElement('button');
     del.className='img-del';del.textContent='✕';
     del.onclick=function(e){e.stopPropagation();delImg(pacId,i);};
@@ -1808,22 +1881,6 @@ function renderImgs(pacId){
   container.appendChild(addBtn);
   return container;
 }
-
-function clsImgOv(){document.getElementById("img-ov").style.display="none";if(window._imgOvReset)window._imgOvReset();}
-function openImg(src){const ov=document.getElementById("img-ov");const im=document.getElementById("img-ov-src");im.src=src;const dl=document.getElementById("img-ov-dl");if(dl){dl.href=src;}ov.style.display="flex";if(window._imgOvReset)window._imgOvReset();}
-
-function getPacImgs(id){
-  try{const v=localStorage.getItem('na5_imgs_'+id);return v?JSON.parse(v):[];}catch(e){return[];}
-}
-function setPacImgs(id,imgs){try{localStorage.setItem('na5_imgs_'+id,JSON.stringify(imgs));}catch(e){alert('Sin espacio para guardar imagen');}}
-
-function delImg(pacId,imgIdx){
-  if(!confirm('¿Eliminar imagen?'))return;
-  const imgs=getPacImgs(pacId);imgs.splice(imgIdx,1);setPacImgs(pacId,imgs);showPt(pacId);
-}
-
-
-
 
 function editField(pacId, field, labelTxt, isMultiline){
   const p=getPat(pacId);
