@@ -361,6 +361,10 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
         <div class="lic" style="background:rgba(129,140,248,.13)">&#8657;</div>
         <div><strong style="font-size:13px">Importar backup</strong><div style="font-size:11px;color:var(--mt)">Carga datos desde archivo</div></div>
       </button>
+      <button class="abtn2 sofia-hidden" onclick="liberarEspacioFotos()">
+        <div class="lic" style="background:rgba(34,197,94,.13)">🧹</div>
+        <div><strong style="font-size:13px">Liberar espacio</strong><div style="font-size:11px;color:var(--mt)">Sube fotos viejas a Dropbox</div></div>
+      </button>
     </div>
     <div style="font-size:11px;color:var(--mt2);margin-top:8px;line-height:1.5">
       Los datos se guardan en este navegador. Export&#225; el backup y mand&#225;telo por WhatsApp para pasarlo a otro dispositivo.
@@ -3078,6 +3082,44 @@ checkTurnosProximos();
 
 
 // ── EXPORT / IMPORT ─────────────────────────────────────────
+async function liberarEspacioFotos(){
+  if(!dbxIsConnected()){ alert('Necesitás Dropbox conectado para hacer esto. Conectate desde el indicador de arriba e intentá de nuevo.'); return; }
+  const token = await getDbxAccessToken();
+  if(!token){ alert('No se pudo conectar a Dropbox. Reconectá e intentá de nuevo.'); return; }
+  // Buscar todos los pacientes con fotos guardadas "a la vieja usanza" (src completo local, sin path en Dropbox)
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('na5_imgs_'))keys.push(k);}
+  let total=0,migradas=0,fallidas=0;
+  for(const k of keys){
+    const pacId=k.replace('na5_imgs_','');
+    let imgs; try{imgs=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){continue;}
+    let cambiado=false;
+    for(let i=0;i<imgs.length;i++){
+      const img=imgs[i];
+      if(img.src && !img.path){
+        total++;
+        try{
+          const ts=Date.now()+'_'+i;
+          const safeName=(img.name||'foto.jpg').replace(/[^a-zA-Z0-9._-]/g,'_');
+          const path='/NeuroAgenda_imgs/'+pacId+'/'+ts+'_'+safeName;
+          const savedPath=await dbxUploadImageBlob(token, path, img.src);
+          const thumb=await new Promise(res=>{
+            const im=new Image();
+            im.onload=()=>{const c=document.createElement('canvas');let w=im.width,h=im.height;if(w>220){h=Math.round(h*220/w);w=220;}c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);res(c.toDataURL('image/jpeg',0.5));};
+            im.src=img.src;
+          });
+          imgs[i]={path:savedPath,thumb,name:img.name,fecha:img.fecha};
+          cambiado=true;migradas++;
+        }catch(e){ fallidas++; }
+      }
+    }
+    if(cambiado){ try{localStorage.setItem(k,JSON.stringify(imgs));}catch(e){ /* si sigue sin espacio, seguimos con las demás */ } }
+  }
+  if(total===0){ alert('No hay fotos viejas para migrar. Ya está todo optimizado.'); return; }
+  alert('Listo: '+migradas+' de '+total+' fotos migradas a Dropbox'+(fallidas?' ('+fallidas+' no se pudieron subir, revisá la conexión)':'')+'. Ahora hay mucho más espacio libre.');
+  if(currentPatId)showPt(currentPatId);
+}
+
 async function exportarTodo(){
   const patImgs={};
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('na5_imgs_')){const pid=k.replace('na5_imgs_','');try{patImgs[pid]=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}}}
