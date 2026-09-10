@@ -1517,7 +1517,13 @@ function openModAdHoc(dkk){
   const tipo=confirm('¿Es videoconsulta?\n(OK = Video · Cancelar = Presencial)')?'video':'presencial';
   openMod(dkk,hora.trim(),tipo,true);
 }
-function delT(dk2,hora){if(!confirm('Cancelar turno?'))return;if(turnos[dk2])delete turnos[dk2][hora];S('tu',turnos);buildAg();buildHome();toast('Turno cancelado');}
+function delT(dk2,hora){
+  if(!confirm('Cancelar turno?'))return;
+  if(turnos[dk2])delete turnos[dk2][hora];
+  S('tu',turnos);
+  const tdel=L('tdel',[]);const key=dk2+'|'+hora;if(!tdel.includes(key)){tdel.push(key);S('tdel',tdel);}
+  buildAg();buildHome();toast('Turno cancelado');
+}
 
 function elegirDxLibre(){
   const campo=document.getElementById('dx-picker-campo').value;
@@ -1958,7 +1964,12 @@ function delNota(pacId, notaIdx, isBase){
     if(!patEdits[pacId].notas_del)patEdits[pacId].notas_del=[];
     patEdits[pacId].notas_del.push(notaIdx);S('pe',patEdits);
   } else {
-    if(notas2[pacId]){notas2[pacId].splice(notaIdx,1);S('n2',notas2);}
+    if(notas2[pacId]&&notas2[pacId][notaIdx]){
+      const n=notas2[pacId][notaIdx];
+      const n2del=L('n2del',[]);const sig=pacId+'|'+n.fecha+'|'+n.texto;
+      if(!n2del.includes(sig)){n2del.push(sig);S('n2del',n2del);}
+      notas2[pacId].splice(notaIdx,1);S('n2',notas2);
+    }
   }
   showPt(pacId);toast('Consulta eliminada');
 }
@@ -2002,6 +2013,7 @@ function delPat(id){
   if(id.startsWith('new_')){
     // Paciente agregado por el usuario: quitar de extraPats
     extraPats=extraPats.filter(e=>e.id!==id);S('ep',extraPats);
+    const epdel=L('epdel',[]);if(!epdel.includes(id)){epdel.push(id);S('epdel',epdel);}
   } else {
     // Paciente base: marcar como eliminado en patEdits
     if(!patEdits[id])patEdits[id]={};
@@ -2440,13 +2452,13 @@ function regGasto(){
   document.getElementById('g-concepto').value='';document.getElementById('g-monto').value='';
   renderGastos();toast('Gasto registrado');
 }
-function delGasto(id){if(!confirm('\u00bfEliminar?'))return;gastos=gastos.filter(g=>g.id!==id);S('ga',gastos);renderGastos();}
+function delGasto(id){if(!confirm('\u00bfEliminar?'))return;gastos=gastos.filter(g=>g.id!==id);S('ga',gastos);const gdel=L('gdel',[]);if(!gdel.includes(id)){gdel.push(id);S('gdel',gdel);}renderGastos();}
 function renderHist(){
   const q=(document.getElementById('fin-srch')?.value||'').toLowerCase().trim();
   const fil=cobros.filter(c=>!q||c.pacienteNombre.toLowerCase().includes(q)||(c.nota&&c.nota.toLowerCase().includes(q)));
   document.getElementById('pay-list').innerHTML=fil.length?fil.map(c=>{const cobrado=c.senia+c.pago;const idx=cobros.indexOf(c);return '<div class="pay-item" style="flex-direction:column;align-items:stretch"><div style="display:flex;gap:10px;align-items:flex-start"><div class="pay-info"><div class="pay-name">'+c.pacienteNombre+'</div><div class="pay-meta">'+c.fecha+' \u00b7 '+c.tipoLabel+(c.nota?' \u00b7 '+c.nota:'')+'</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap">'+(c.senia?'<span class="tag-s">Se\u00f1a $'+c.senia.toLocaleString('es-AR')+'</span>':'')+(c.pago?'<span class="tag-p">Consultorio $'+c.pago.toLocaleString('es-AR')+'</span>':'')+'</div>'+(c.saldo>0?'<button class="inline-save" style="margin-top:6px;font-size:11px;padding:3px 10px" onclick="completarPago('+idx+')">Completar pago ($'+c.saldo.toLocaleString('es-AR')+')</button>':'')+'</div><div class="pay-amt"><div class="pay-total">$'+cobrado.toLocaleString('es-AR')+'</div><div class="pay-saldo" style="color:'+(c.saldo>0?'var(--am)':'var(--gn)')+'">'+(c.saldo>0?'Resta $'+c.saldo.toLocaleString('es-AR'):'Pagado \u2713')+'</div></div></div><div style="text-align:right;margin-top:8px;padding-top:6px;border-top:1px dashed var(--bd)"><button style="background:none;border:1px solid var(--rd)33;color:var(--rd);font-size:10px;padding:2px 8px;border-radius:5px;cursor:pointer" onclick="delCobro('+c.id+')">\ud83d\uddd1 Eliminar cobro</button></div></div>';}).join(''):'<div style="color:var(--mt2);font-size:13px;text-align:center;padding:32px 0">Sin cobros registrados</div>';
 }
-function delCobro(id){if(!confirm('\u00bfEliminar?'))return;cobros=cobros.filter(c=>c.id!==id);S('co',cobros);renderHist();}
+function delCobro(id){if(!confirm('\u00bfEliminar?'))return;cobros=cobros.filter(c=>c.id!==id);S('co',cobros);const cdel=L('cdel',[]);if(!cdel.includes(id)){cdel.push(id);S('cdel',cdel);}renderHist();}
 function renderResumen(){
   function parseDate(str){const p=(str||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
   function monthKey(d){return d?d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0')):null;}
@@ -3333,7 +3345,9 @@ function buildBackupPayload(){
     notas2: L('n2',{}), turnos: L('tu',{}), cobros: L('co',[]), gastos: L('ga',[]),
     resumenesIA: L('ria',{}), nextApps: L('napp',{}),
     waEnviados: L('wa_env',{}), secLlamados: L('sec_llamados',[]),
-    patImgs: patImgs
+    patImgs: patImgs,
+    turnosDel: L('tdel',[]), cobrosDel: L('cdel',[]), gastosDel: L('gdel',[]),
+    extraPatsDel: L('epdel',[]), notas2Del: L('n2del',[])
   };
 }
 
@@ -3371,23 +3385,52 @@ function mergeArrayUnique(remote, local){
   (local||[]).forEach(it=>map.set(JSON.stringify(it),it));
   return Array.from(map.values());
 }
+// patEdits: fusión campo por campo (no todo el objeto del paciente),
+// y dentro de eso, notas_del (índices de notas base borradas) se une, nunca se pisa.
+function mergePatEdits(remote, local){
+  const out = {};
+  const ids = new Set([...Object.keys(remote||{}), ...Object.keys(local||{})]);
+  ids.forEach(id=>{
+    const r=(remote||{})[id]||{}, l=(local||{})[id]||{};
+    const merged = Object.assign({}, r, l);
+    const notasDel = Array.from(new Set([...(r.notas_del||[]), ...(l.notas_del||[])]));
+    if(notasDel.length) merged.notas_del = notasDel;
+    out[id]=merged;
+  });
+  return out;
+}
 function mergeBackup(remote, mine){
   remote = remote || {};
+  const turnosDel = mergeArrayUnique(remote.turnosDel, mine.turnosDel);
+  const cobrosDel = mergeArrayUnique(remote.cobrosDel, mine.cobrosDel);
+  const gastosDel = mergeArrayUnique(remote.gastosDel, mine.gastosDel);
+  const extraPatsDel = mergeArrayUnique(remote.extraPatsDel, mine.extraPatsDel);
+  const notas2Del = mergeArrayUnique(remote.notas2Del, mine.notas2Del);
+
+  let turnos = mergeNestedDict(remote.turnos, mine.turnos);
+  turnosDel.forEach(k=>{ const idx=k.lastIndexOf('|'); const dk=k.slice(0,idx), h=k.slice(idx+1); if(turnos[dk])delete turnos[dk][h]; });
+
+  let cobros = mergeArrayById(remote.cobros, mine.cobros, 'id').filter(c=>!cobrosDel.includes(c.id));
+  let gastos = mergeArrayById(remote.gastos, mine.gastos, 'id').filter(g=>!gastosDel.includes(g.id));
+  let extraPats = mergeArrayById(remote.extraPats, mine.extraPats, 'id').filter(p=>!extraPatsDel.includes(p.id));
+
+  let notas2 = mergeDictOfArrays(remote.notas2, mine.notas2);
+  Object.keys(notas2).forEach(pacId=>{
+    notas2[pacId] = notas2[pacId].filter(n=>!notas2Del.includes(pacId+'|'+n.fecha+'|'+n.texto));
+  });
+
   return {
     version: 5, fecha: new Date().toISOString(),
-    extraPats: mergeArrayById(remote.extraPats, mine.extraPats, 'id'),
-    patEdits: mergeDict(remote.patEdits, mine.patEdits),
+    extraPats, patEdits: mergePatEdits(remote.patEdits, mine.patEdits),
     dxPropio: mergeDict(remote.dxPropio, mine.dxPropio),
     dxIA: mergeDict(remote.dxIA, mine.dxIA),
-    notas2: mergeDictOfArrays(remote.notas2, mine.notas2),
-    turnos: mergeNestedDict(remote.turnos, mine.turnos),
-    cobros: mergeArrayById(remote.cobros, mine.cobros, 'id'),
-    gastos: mergeArrayById(remote.gastos, mine.gastos, 'id'),
+    notas2, turnos, cobros, gastos,
     resumenesIA: mergeDict(remote.resumenesIA, mine.resumenesIA),
     nextApps: mergeDict(remote.nextApps, mine.nextApps),
     waEnviados: mergeDict(remote.waEnviados, mine.waEnviados),
     secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados),
-    patImgs: mergeDictOfArrays(remote.patImgs, mine.patImgs)
+    patImgs: mergeDictOfArrays(remote.patImgs, mine.patImgs),
+    turnosDel, cobrosDel, gastosDel, extraPatsDel, notas2Del
   };
 }
 
@@ -3489,6 +3532,8 @@ async function dbxRestoreIfNeeded(){
     S('dxi',data.dxIA||{}); S('n2',data.notas2||{}); S('tu',data.turnos||{});
     S('co',data.cobros||[]); S('ga',data.gastos||[]); S('ria',data.resumenesIA||{}); S('napp',data.nextApps||{});
     S('wa_env',data.waEnviados||{}); S('sec_llamados',data.secLlamados||[]);
+    S('tdel',data.turnosDel||[]); S('cdel',data.cobrosDel||[]); S('gdel',data.gastosDel||[]);
+    S('epdel',data.extraPatsDel||[]); S('n2del',data.notas2Del||[]);
     if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
