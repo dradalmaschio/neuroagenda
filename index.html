@@ -951,7 +951,7 @@ function buildProximas(){
     const parts=fecha.split('/');if(parts.length<3)return null;
     const d=new Date(+parts[2],+parts[1]-1,+parts[0]);
     return{id,nombre:p.nombre,fecha,d};
-  }).filter(x=>x&&x.d.getMonth()===mes&&x.d.getFullYear()===anio)
+  }).filter(x=>x&&x.d.getMonth()===mes&&x.d.getFullYear()===anio&&!waEnviados[x.id])
     .sort((a,b)=>a.d-b.d);
   const el=document.getElementById('home-proximas');
   if(!el)return;
@@ -960,16 +960,12 @@ function buildProximas(){
     const diasRestantes=Math.ceil((x.d-hoy)/(1000*60*60*24));
     const color=diasRestantes<0?'var(--rd)':diasRestantes<=3?'var(--am)':'var(--gn)';
     const label=diasRestantes<0?'Vencida hace '+Math.abs(diasRestantes)+' día'+(Math.abs(diasRestantes)>1?'s':''):diasRestantes===0?'Hoy':diasRestantes===1?'Mañana':'En '+diasRestantes+' días';
-    const waSent=waEnviados[x.id];
-    const waHoy=waSent&&waSent===new Date().toLocaleDateString('es-AR');
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--sf);border-radius:var(--rs);margin-bottom:5px">'
       +'<div style="flex:1;cursor:pointer" onclick="showPt(\''+esc(x.id)+'\')">'
       +'<div style="font-size:13px;font-weight:500">'+x.nombre+'</div>'
       +'<div style="font-size:11px;color:var(--mt)">'+x.fecha+'</div></div>'
-      +(waHoy
-        ?'<div style="font-size:11px;font-weight:600;color:#25D366">✓ Enviado</div>'
-        :'<div style="font-size:12px;font-weight:600;color:'+color+'">'+label+'</div>'
-      )+'</div>';
+      +'<div style="font-size:12px;font-weight:600;color:'+color+'">'+label+'</div>'
+      +'</div>';
   }).join('');
 }
 
@@ -3229,6 +3225,11 @@ function importarTodo(){
         if(data.nextApps)  S('napp', data.nextApps);
         if(data.waEnviados) S('wa_env', data.waEnviados);
         if(data.secLlamados) S('sec_llamados', data.secLlamados);
+        if(data.turnosDel) S('tdel', data.turnosDel);
+        if(data.cobrosDel) S('cdel', data.cobrosDel);
+        if(data.gastosDel) S('gdel', data.gastosDel);
+        if(data.extraPatsDel) S('epdel', data.extraPatsDel);
+        if(data.notas2Del) S('n2del', data.notas2Del);
         // Reload state
         extraPats = L('ep',[]);patEdits=L('pe',{});dxPropio=L('dxp',{});dxIA=L('dxi',{});
         notas2=L('n2',{});turnos=L('tu',{});cobros=L('co',[]);gastos=L('ga',[]);resumenesIA=L('ria',{});
@@ -3521,8 +3522,7 @@ async function dbxRestoreIfNeeded(){
 
     const remoteFecha = data.fecha || '';
     const localFecha = localStorage.getItem('dbx_last_fecha') || '';
-    if(remoteFecha && remoteFecha === localFecha){
-      // Ya tenemos exactamente esta versión
+    if(remoteFecha && localFecha && remoteFecha<=localFecha){
       dbxSetStatus('ok','Dropbox: activo ✓');
       dbxPulling = false;
       return;
