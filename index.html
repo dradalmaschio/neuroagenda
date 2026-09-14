@@ -3230,6 +3230,7 @@ function importarTodo(){
         if(data.gastosDel) S('gdel', data.gastosDel);
         if(data.extraPatsDel) S('epdel', data.extraPatsDel);
         if(data.notas2Del) S('n2del', data.notas2Del);
+        if(data.lldel) S('lldel', data.lldel);
         // Reload state
         extraPats = L('ep',[]);patEdits=L('pe',{});dxPropio=L('dxp',{});dxIA=L('dxi',{});
         notas2=L('n2',{});turnos=L('tu',{});cobros=L('co',[]);gastos=L('ga',[]);resumenesIA=L('ria',{});
@@ -3348,7 +3349,7 @@ function buildBackupPayload(){
     waEnviados: L('wa_env',{}), secLlamados: L('sec_llamados',[]),
     patImgs: patImgs,
     turnosDel: L('tdel',[]), cobrosDel: L('cdel',[]), gastosDel: L('gdel',[]),
-    extraPatsDel: L('epdel',[]), notas2Del: L('n2del',[])
+    extraPatsDel: L('epdel',[]), notas2Del: L('n2del',[]), lldel: L('lldel',[])
   };
 }
 
@@ -3407,6 +3408,7 @@ function mergeBackup(remote, mine){
   const gastosDel = mergeArrayUnique(remote.gastosDel, mine.gastosDel);
   const extraPatsDel = mergeArrayUnique(remote.extraPatsDel, mine.extraPatsDel);
   const notas2Del = mergeArrayUnique(remote.notas2Del, mine.notas2Del);
+  const lldel = mergeArrayUnique(remote.lldel, mine.lldel);
 
   let turnos = mergeNestedDict(remote.turnos, mine.turnos);
   turnosDel.forEach(k=>{ const idx=k.lastIndexOf('|'); const dk=k.slice(0,idx), h=k.slice(idx+1); if(turnos[dk])delete turnos[dk][h]; });
@@ -3429,9 +3431,9 @@ function mergeBackup(remote, mine){
     resumenesIA: mergeDict(remote.resumenesIA, mine.resumenesIA),
     nextApps: mergeDict(remote.nextApps, mine.nextApps),
     waEnviados: mergeDict(remote.waEnviados, mine.waEnviados),
-    secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados),
+    secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados).filter(x=>!lldel.includes(JSON.stringify(x))),
     patImgs: mergeDictOfArrays(remote.patImgs, mine.patImgs),
-    turnosDel, cobrosDel, gastosDel, extraPatsDel, notas2Del
+    turnosDel, cobrosDel, gastosDel, extraPatsDel, notas2Del, lldel
   };
 }
 
@@ -3498,6 +3500,16 @@ function dbxScheduleSave(){
   dbxSaveTimer = setTimeout(dbxSaveNow, 2000);
 }
 
+// Antes de traer datos nuevos de Dropbox, chequeamos que no haya algo
+// abierto sin guardar (un modal de paciente, o una consulta en edición),
+// para no pisarle encima a la persona mientras está escribiendo.
+function algoEnEdicionSinGuardar(){
+  const abiertos=document.querySelectorAll('.ov:not(.h)');
+  if(abiertos.length) return true;
+  if(document.querySelector('.inline-edit')) return true;
+  return false;
+}
+
 // Trae lo último de Dropbox SIEMPRE que sea más nuevo que lo que ya tenemos localmente
 // (antes solo bajaba si el dispositivo estaba completamente vacío — por eso no sincronizaba).
 let dbxPulling = false;
@@ -3505,6 +3517,7 @@ async function dbxRestoreIfNeeded(){
   updateDbxConnectBtn();
   if(!dbxIsConnected()){ dbxSetStatus('err','Dropbox: no conectado'); return; }
   if(dbxPulling || dbxSaving) return;
+  if(algoEnEdicionSinGuardar()){ dbxSetStatus('ok','Dropbox: en pausa (hay algo sin guardar)'); return; }
   dbxPulling = true;
   try{
     const token = await getDbxAccessToken();
@@ -3533,7 +3546,7 @@ async function dbxRestoreIfNeeded(){
     S('co',data.cobros||[]); S('ga',data.gastos||[]); S('ria',data.resumenesIA||{}); S('napp',data.nextApps||{});
     S('wa_env',data.waEnviados||{}); S('sec_llamados',data.secLlamados||[]);
     S('tdel',data.turnosDel||[]); S('cdel',data.cobrosDel||[]); S('gdel',data.gastosDel||[]);
-    S('epdel',data.extraPatsDel||[]); S('n2del',data.notas2Del||[]);
+    S('epdel',data.extraPatsDel||[]); S('n2del',data.notas2Del||[]); S('lldel',data.lldel||[]);
     if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
