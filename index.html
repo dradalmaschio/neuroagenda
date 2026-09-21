@@ -757,6 +757,10 @@ function showDx(p){return p.dx_propio||p.dx_ia||p.diagnostico||'sin_diagnostico'
 
 function sv(v){
   if(window._sofiaMode&&(v==='fin'||v==='dx'||v==='stats'||v==='ia')){toast('Acceso restringido');return;}
+  if(algoEnEdicionSinGuardar()){
+    if(!confirm('Tenés un turno o un paciente abierto sin guardar. ¿Salir igual? (se va a perder lo que escribiste)'))return;
+    document.querySelectorAll('.ov').forEach(o=>o.classList.add('h'));
+  }
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));
   document.getElementById('view-'+v)?.classList.add('on');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -3378,7 +3382,13 @@ function mergeDictOfArrays(remote, local){
 function mergeArrayById(remote, local, idKey){
   const map=new Map();
   (remote||[]).forEach(it=>map.set(it[idKey],it));
-  (local||[]).forEach(it=>map.set(it[idKey],it)); // lo local pisa solo su propio id
+  (local||[]).forEach(it=>{
+    const id=it[idKey];
+    const existing=map.get(id);
+    // Fusión campo por campo: si ya existía en remoto, combinamos ambos objetos
+    // (lo local pisa solo los campos que trae) en vez de reemplazar la ficha entera.
+    map.set(id, existing ? Object.assign({}, existing, it) : it);
+  });
   return Array.from(map.values());
 }
 function mergeArrayUnique(remote, local){
