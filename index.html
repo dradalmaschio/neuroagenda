@@ -695,7 +695,7 @@ const GASTOS_HAB=[
   {label:'Hostinger',color:'#F59E0B',nota:'Hosting mensual'},
   {label:'Google Ads',color:'#EF4444',nota:'Publicidad mensual'},
 ];
-const S=(k,v)=>{try{localStorage.setItem('na4_'+k,JSON.stringify(v));}catch(e){}if(typeof dbxScheduleSave==='function')dbxScheduleSave();};
+const S=(k,v)=>{try{localStorage.setItem('na4_'+k,JSON.stringify(v));}catch(e){alert('⚠️ Sin espacio para guardar. Los cambios NO se guardaron. Andá a Inicio → Mis datos → "Liberar espacio" antes de seguir cargando.');}if(typeof dbxScheduleSave==='function')dbxScheduleSave();};
 const L=(k,d)=>{try{const v=localStorage.getItem('na4_'+k);return v?JSON.parse(v):d}catch(e){return d}};
 let extraPats=L('ep',[]),patEdits=L('pe',{}),dxPropio=L('dxp',{}),dxIA=L('dxi',{});
 let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resumenesIA=L('ria',{});
@@ -2082,7 +2082,10 @@ function showPt(id){
   // Restaurar borrador si existe
   const draft=localStorage.getItem('na4_draft_'+id);
   if(draft){ta.value=draft;ta.style.borderColor='var(--am)';}
-  ta.oninput=function(){localStorage.setItem('na4_draft_'+id,ta.value);ta.style.borderColor=ta.value?'var(--am)':'';};
+  ta.oninput=function(){
+    try{ localStorage.setItem('na4_draft_'+id,ta.value); ta.style.borderColor=ta.value?'var(--am)':''; }
+    catch(e){ ta.style.borderColor='var(--rd)'; if(!window._draftWarnShown){window._draftWarnShown=true; alert('⚠️ Sin espacio: lo que escribas acá NO se está guardando como borrador. Copiá el texto aparte y andá a Inicio → Mis datos → "Liberar espacio" antes de seguir.'); } }
+  };
   const sb=ce('button','btnp');sb.textContent='Guardar consulta';sb.onclick=function(){addNota(id);};
   addbox.appendChild(adlbl);addbox.appendChild(ta);addbox.appendChild(sb);det.appendChild(addbox);
   const rb=ce('button','btnia');rb.style.cssText='margin-top:8px';rb.textContent='🎙️ Grabar consulta y resumir con IA';
@@ -2832,8 +2835,13 @@ function editarLlamado(i){abrirModalLlamado(i);}
 function eliminarLlamado(i){
   if(!confirm('¿Eliminar este llamado?'))return;
   llamados=L('sec_llamados',[]);
+  const rem=llamados[i];
   llamados.splice(i,1);
   S('sec_llamados',llamados);
+  if(rem){
+    const lldel=L('lldel',[]);const sig=JSON.stringify(rem);
+    if(!lldel.includes(sig)){lldel.push(sig);S('lldel',lldel);}
+  }
   buildSecreLlamados();
 }
 
