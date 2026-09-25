@@ -772,6 +772,10 @@ function sv(v){
 
 // Pedir contraseña solo al abrir Historial o Resumen de Finanzas
 function ftab(t){
+  if(!window._finAuth){
+    const until=+(localStorage.getItem('na_fin_auth_until')||0);
+    if(until>Date.now())window._finAuth=true;
+  }
   if((t==='hist'||t==='resumen')&&!window._finAuth){
     window._finPendingTab=t;
     const ov=document.getElementById('fin-lock-ov');
@@ -796,6 +800,7 @@ function finUnlock(){
   const correctPass=localStorage.getItem('na_fin_pass')||'neuro44';
   if(pass===correctPass){
     window._finAuth=true;
+    try{localStorage.setItem('na_fin_auth_until', String(Date.now()+15*60*1000));}catch(e){}
     document.getElementById('fin-lock-ov').style.display='none';
     // Si venía de un tab específico, ir ahí; si no, resumen
     const pendTab=window._finPendingTab||'resumen';
@@ -1204,11 +1209,21 @@ function renderSlot(dkk,hora,tipo,a,adHoc){
       +(sinReg?' <span style="font-size:10px;color:var(--mt2)">(sin registrar)</span>':'')
       +(a.motivo?' · <span style="color:var(--mt2);font-size:12px">'+a.motivo+'</span>':'')+'</div>';
     const tipoIngreso=tipo==='video'?'video':'presencial';
+    const turnoKeyChk=dkk+'|'+hora;
+    const cobroExistente=cobros.find(c=>c.turnoKey===turnoKeyChk);
+    let estadoPagoHtml='';
+    if(cobroExistente){
+      const pagadoTotal=cobroExistente.saldo<=0;
+      estadoPagoHtml='<div style="font-size:10.5px;font-weight:600;margin-top:2px;color:'+(pagadoTotal?'var(--gn)':'var(--am)')+'">'
+        +(pagadoTotal?'✓ Pagado $'+cobroExistente.total.toLocaleString('es-AR'):'Seña $'+cobroExistente.senia.toLocaleString('es-AR')+' · falta $'+cobroExistente.saldo.toLocaleString('es-AR'))
+        +'</div>';
+    }
     accHtml='<div style="display:flex;gap:4px">'
-      +'<button class="ybtn" style="color:var(--gn);border-color:rgba(34,211,163,.3)" title="Registrar ingreso" onclick="abrirIngresoRapido(\''+a.pacienteId+'\',\''+a.pacienteNombre+'\',\''+tipoIngreso+'\')">$</button>'
+      +'<button class="ybtn" style="color:var(--gn);border-color:rgba(34,211,163,.3)" title="Registrar ingreso" onclick="abrirIngresoRapido(\''+a.pacienteId+'\',\''+a.pacienteNombre+'\',\''+tipoIngreso+'\',\''+dkk+'\',\''+hora+'\')">'+(cobroExistente?(cobroExistente.saldo<=0?'✓':'$'):'$')+'</button>'
       +'<button class="ybtn" onclick="openMod(\''+dkk+'\',\''+hora+'\',\''+(tipo||'presencial')+'\','+(adHoc?'true':'false')+',true)">✎</button>'
       +'<button class="xbtn" onclick="delT(\''+dkk+'\',\''+hora+'\')">✕</button>'
       +'</div>';
+    pacHtml+=estadoPagoHtml;
   } else {
     pacHtml='<div class="apac libre">Libre</div>';
     accHtml='<button class="ybtn" onclick="openMod(\''+dkk+'\',\''+hora+'\',\''+(tipo||'presencial')+'\''+( adHoc?',true':'')+')">+ Asignar</button>';
@@ -1322,21 +1337,32 @@ function irSelTipo(id){
   });
 }
 
-function abrirIngresoRapido(pacId, pacNombre, tipoConsulta){
+function abrirIngresoRapido(pacId, pacNombre, tipoConsulta, dkk, hora){
+  const turnoKey=(dkk&&hora)?dkk+'|'+hora:'';
   document.getElementById('ir-nombre').textContent=pacNombre;
   document.getElementById('ir-pac-id').value=pacId||'';
   document.getElementById('ir-pac-nombre').value=pacNombre||'';
+  document.getElementById('ir-turno-key').value=turnoKey;
+  document.getElementById('ir-fecha-turno').value=dkk||'';
   document.getElementById('ir-primera').checked=false;
   document.getElementById('ir-senia').value='';
   document.getElementById('ir-pago').value='';
   document.getElementById('ir-nota').value='';
+  // Si ya había un cobro cargado para este turno puntual, lo mostramos para completar el saldo
+  const existente=turnoKey?cobros.find(c=>c.turnoKey===turnoKey):null;
+  if(existente){
+    document.getElementById('ir-senia').value=existente.senia||'';
+    document.getElementById('ir-pago').value=existente.pago||'';
+    document.getElementById('ir-nota').value=existente.nota||'';
+    document.getElementById('ir-primera').checked=!!existente.primeraVez;
+  }
   // Renderizar botones de tipo
   const tipoInicial=tipoConsulta==='video'?'video':'presencial';
   const btns=document.getElementById('ir-tipo-btns');
   btns.innerHTML=TIPOS.filter(t=>t.id!=='consulta').map(t=>
     '<button class="ir-tipo-btn" data-id="'+t.id+'" data-color="'+t.color+'" onclick="irSelTipo(\''+t.id+'\')" style="background:'+t.color+'18;border:1.5px solid transparent;color:'+t.color+';padding:5px 11px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500">'+t.label+'</button>'
   ).join('');
-  irSelTipo(tipoInicial);
+  irSelTipo((existente&&existente.tipo)||tipoInicial);
   document.getElementById('ingreso-rapido-ov').style.display='flex';
   setTimeout(()=>document.getElementById('ir-senia').focus(),80);
 }
@@ -1344,6 +1370,8 @@ function abrirIngresoRapido(pacId, pacNombre, tipoConsulta){
 function registrarIngresoRapido(){
   const pacId=document.getElementById('ir-pac-id').value;
   const pacNombre=document.getElementById('ir-pac-nombre').value;
+  const turnoKey=document.getElementById('ir-turno-key').value;
+  const fechaTurno=document.getElementById('ir-fecha-turno').value;
   const tipo=document.getElementById('ir-tipo').value||'presencial';
   const senia=parseFloat(document.getElementById('ir-senia').value)||0;
   const pago=parseFloat(document.getElementById('ir-pago').value)||0;
@@ -1351,17 +1379,23 @@ function registrarIngresoRapido(){
   const primera=document.getElementById('ir-primera').checked;
   const t=TIPOS.find(x=>x.id===tipo)||TIPOS[0];
   const cobrado=senia+pago;
-  if(!cobrado){alert('Ingresá al menos un monto');return;}
   const total=Math.max(t.total||0,cobrado);
+  if(!cobrado&&!total){alert('Ingresá un monto o elegí un tipo de servicio con precio cargado');return;}
   const saldo=Math.max(0,total-cobrado);
   const fecha=new Date().toLocaleDateString('es-AR');
-  const nuevoCobro={id:Date.now(),fecha,fecha_consulta:fecha,tipo,tipoLabel:t.label,pacienteId:pacId||'',pacienteNombre:pacNombre,total,senia,pago,saldo,nota,primeraVez:primera};
-  cobros.unshift(nuevoCobro);
+  const fecha_consulta=fechaTurno?fechaTurno.split('-').reverse().join('/'):fecha;
+  const existenteIdx=turnoKey?cobros.findIndex(c=>c.turnoKey===turnoKey):-1;
+  if(existenteIdx>=0){
+    cobros[existenteIdx]=Object.assign({},cobros[existenteIdx],{tipo,tipoLabel:t.label,total,senia,pago,saldo,nota,primeraVez:primera});
+  }else{
+    const nuevoCobro={id:Date.now(),fecha,fecha_consulta,turnoKey,tipo,tipoLabel:t.label,pacienteId:pacId||'',pacienteNombre:pacNombre,total,senia,pago,saldo,nota,primeraVez:primera};
+    cobros.unshift(nuevoCobro);
+  }
   try{
     localStorage.setItem('na4_co',JSON.stringify(cobros));
     if(typeof dbxScheduleSave==='function')dbxScheduleSave();
   }catch(e){
-    cobros.shift();
+    if(existenteIdx<0)cobros.shift();
     alert('Sin espacio de almacenamiento.');
     return;
   }
@@ -3633,6 +3667,8 @@ window.addEventListener('load', function(){
     </div>
     <input type="hidden" id="ir-pac-id">
     <input type="hidden" id="ir-pac-nombre">
+    <input type="hidden" id="ir-turno-key">
+    <input type="hidden" id="ir-fecha-turno">
     <div style="margin-bottom:12px">
       <label style="font-size:11px;color:var(--mt);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Tipo de servicio</label>
       <div id="ir-tipo-btns" style="display:flex;flex-wrap:wrap;gap:6px"></div>
