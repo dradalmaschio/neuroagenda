@@ -885,13 +885,14 @@ function enviarWA(id){
   waEnviados[id]=new Date().toLocaleDateString('es-AR');
   S('wa_env',waEnviados);
   buildHome();
+  if(typeof buildSecreWA==='function')buildSecreWA();
   // Guardar en historial de mensajes
   let histWA=L('wa_hist',[]);
   histWA.unshift({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),paciente:p.nombre,tel:p.telefono||'',msg});
   if(histWA.length>100)histWA=histWA.slice(0,100);
   S('wa_hist',histWA);
   // Abrir WhatsApp — wa.me para web (Sofía), intent para Android app (doctora)
-  const waUrlFinal='https://wa.me/'+telArg+'?text='+encodeURIComponent(msg);
+  const waUrlFinal='https://web.whatsapp.com/send?phone='+telArg+'&text='+encodeURIComponent(msg);
   if(window._sofiaMode){
     window.open(waUrlFinal,'_blank');
   } else {
@@ -944,10 +945,14 @@ function setNextApp(id){
   document.getElementById('_date_cancel').onclick=function(){document.body.removeChild(ov);};
   document.getElementById('_date_ok').onclick=function(){
     const val=normalizarFecha(inp.value.trim());
+    const prevVal=nextApps[id];
     if(val){nextApps[id]=val;}else{delete nextApps[id];}
+    // Fecha nueva = recordatorio nuevo: se limpia el "enviado" anterior (vacío, no borrar, para que sincronice)
+    if(val&&prevVal!==val&&waEnviados[id]){waEnviados[id]='';S('wa_env',waEnviados);}
     S('napp',nextApps);
     document.body.removeChild(ov);
     showPt(id);buildHome();
+    if(typeof buildSecreWA==='function')buildSecreWA();
   };
   inp.onkeydown=function(e){if(e.key==='Enter')document.getElementById('_date_ok').click();if(e.key==='Escape')document.getElementById('_date_cancel').click();};
 }
@@ -2742,9 +2747,9 @@ function buildSecreWA(){
     const diff=Math.round((d-hoy)/(1000*60*60*24));
     const waSent=waEnviados[id];
     return {id,p,fecha,diff,waSent};
-  }).filter(Boolean).sort((a,b)=>a.diff-b.diff);
+  }).filter(x=>x&&!x.waSent).sort((a,b)=>a.diff-b.diff);
 
-  if(!items.length){document.getElementById('s-wa-lista').innerHTML='<div style="color:var(--mt);font-size:13px;padding:16px 0">Sin pacientes con fecha de próxima consulta</div>';return;}
+  if(!items.length){document.getElementById('s-wa-lista').innerHTML='<div style="color:var(--mt);font-size:13px;padding:16px 0">No hay recordatorios pendientes de enviar ✓</div>';return;}
 
   document.getElementById('s-wa-lista').innerHTML=items.map(x=>{
     const color=x.diff<0?'var(--rd)':x.diff===0?'var(--am)':'var(--gn)';
@@ -2825,7 +2830,7 @@ function buildSecreLlamados(){
       +'<div style="font-size:10px;color:var(--mt2);margin-top:4px">'+l.fecha+(l.hora?' · '+l.hora:'')+'</div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">'
-      +(telWA?'<button onclick="abrirWAPorModo(\''+telWA+'\')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">WA</button>':'')
+      +(telWA?'<button onclick="waLlamado(\''+telWA+'\')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:#25D366;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">WA</button>':'')
       +'<div style="display:flex;gap:5px">'
       +'<button onclick="editarLlamado('+i+')" style="background:none;border:1px solid var(--bd);color:var(--mt);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✎</button>'
       +'<button onclick="eliminarLlamado('+i+')" style="background:none;border:1px solid rgba(251,44,91,.3);color:var(--rd);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✕</button>'
@@ -2904,11 +2909,12 @@ function enviarMasivo(id){
   const msg=template.replace(/{nombre}/g,nombre).replace(/{fecha}/g,fechaFmt);
   const tel=(p.telefono||'').replace(/\D/g,'');
   const telArg=tel?(tel.startsWith('54')?tel:'54'+tel):'';
-  const url='https://wa.me/'+telArg+'?text='+encodeURIComponent(msg);
-  window.open(url,'_blank');
+  if(!telArg){alert('Este paciente no tiene teléfono cargado.');return;}
+  abrirWAPorModo(telArg,msg);
   waEnviados[id]=new Date().toLocaleDateString('es-AR');
   S('wa_env',waEnviados);
   buildHome();
+  if(typeof buildSecreWA==='function')buildSecreWA();
 }
 
 function buildStats(){
@@ -3048,10 +3054,15 @@ function sofiaLogin(){
   if(u===ou&&p===op){localStorage.setItem('sec_session','1');activarModoSofia();}
   else{document.getElementById('sl-e').textContent='Usuario o contraseña incorrectos';document.getElementById('sl-p').value='';}
 }
+// Mensaje predeterminado para contestar a quienes llamaron / escribieron
+const MSG_LLAMADO_DEFAULT='Buen día! Recibí un mensaje. Soy la neuróloga Sandra Dal Maschio.\nDesea reservar un turno?';
+function waLlamado(tel){abrirWAPorModo(tel,MSG_LLAMADO_DEFAULT);}
+
 function abrirWAPorModo(tel,texto){
   const msg=texto||'';
   if(window._sofiaMode){
-    const url=msg?('https://wa.me/'+tel+'?text='+encodeURIComponent(msg)):'https://wa.me/'+tel;
+    // Sofía trabaja desde la PC: WhatsApp Web directo (con la cuenta Business vinculada en ese navegador)
+    const url='https://web.whatsapp.com/send?phone='+tel+(msg?'&text='+encodeURIComponent(msg):'');
     window.open(url,'_blank');
   } else {
     const intent='intent://send?phone='+tel+(msg?'&text='+encodeURIComponent(msg):'')+'#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end';
@@ -3618,12 +3629,47 @@ async function dbxRestoreIfNeeded(){
   dbxPulling = false;
 }
 
+// ── Llamadas perdidas desde el celular (vía MacroDroid) ──────────────────
+// MacroDroid abre esta URL con el número al detectar una llamada perdida:
+// https://dradalmaschio.github.io/neuroagenda/?llamada=NUMERO&nombre=NOMBRE
+function checkLlamadaURL(){
+  const params=new URLSearchParams(location.search);
+  const tel=(params.get('llamada')||'').trim();
+  if(!tel)return;
+  const nombreParam=(params.get('nombre')||'').trim();
+  // Limpiar la URL ya mismo para que un refresco de la página no la vuelva a cargar
+  history.replaceState({}, '', location.pathname);
+  const telLimpio=tel.replace(/\D/g,'');
+  if(!telLimpio)return;
+  llamados=L('sec_llamados',[]);
+  // Evitar duplicado si la misma llamada perdida vuelve a disparar el macro dos veces seguidas
+  const hacePoco=llamados.find(l=>(l.tel||'').replace(/\D/g,'')===telLimpio && (Date.now()-(l.ts||0))<5*60*1000);
+  if(hacePoco){ toast('Esa llamada perdida ya estaba anotada'); return; }
+  const ahora=new Date();
+  const p=allPats().find(p=>(p.telefono||'').replace(/\D/g,'').endsWith(telLimpio.slice(-8)));
+  const entry={
+    nombre: nombreParam || (p?p.nombre:'Llamada perdida (sin identificar)'),
+    tel: tel,
+    nota: 'Llamada perdida — SIM trabajo',
+    fecha: ahora.toLocaleDateString('es-AR'),
+    hora: ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
+    ts: Date.now()
+  };
+  llamados.unshift(entry);
+  S('sec_llamados',llamados);
+  toast('📞 Llamada perdida agregada: '+(entry.nombre));
+  if(typeof buildSecre==='function')buildSecre();
+  sv('secre');
+  if(typeof secTab==='function')secTab('llamados');
+}
+
 // Init on load, y luego reintentamos traer lo último cada 45s
 // (así si Sofía carga un llamado desde su teléfono, en un rato aparece en la computadora sin recargar la página)
 window.addEventListener('load', function(){
   dbxHandleRedirect();
   dbxRestoreIfNeeded();
   setInterval(dbxRestoreIfNeeded, 45000);
+  checkLlamadaURL();
 });
 
 </script>
