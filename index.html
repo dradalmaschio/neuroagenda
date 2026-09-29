@@ -3672,6 +3672,15 @@ window.addEventListener('load', function(){
   checkLlamadaURL();
 });
 
+// También revisar cuando la pestaña vuelve a quedar visible (MacroDroid a veces
+// solo trae al frente una pestaña ya abierta en vez de recargarla, y en ese caso
+// el evento 'load' nunca se dispara; esto cubre ese caso)
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible'){
+    checkLlamadaURL();
+  }
+});
+
 </script>
 
 <div id="fin-lock-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center">
