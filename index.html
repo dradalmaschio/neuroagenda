@@ -533,6 +533,8 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
     <div style="display:flex;gap:6px">
       <button onclick="sincronizarSecre()" style="background:none;border:1px solid var(--bd);color:var(--mt);font-size:11px;cursor:pointer;padding:4px 10px;border-radius:6px">🔄 Cargar</button>
       <button onclick="dbxSaveNow&&dbxSaveNow().then(()=>toast('✓ Guardado en Dropbox'))" style="background:none;border:1px solid rgba(176,107,255,.3);color:var(--ac);font-size:11px;cursor:pointer;padding:4px 10px;border-radius:6px">☁️ Guardar</button>
+      <button onclick="document.getElementById('txtLlamadasInput').click()" style="background:none;border:1px solid rgba(255,180,80,.4);color:#ffb450;font-size:11px;cursor:pointer;padding:4px 10px;border-radius:6px">📄 Importar TXT</button>
+      <input type="file" id="txtLlamadasInput" accept=".txt" style="display:none" onchange="importarLlamadasTxt(event)">
     </div>
     <button onclick="abrirCambioPassSofia()" style="background:none;border:none;color:var(--mt);font-size:11px;cursor:pointer">🔐 Contraseña</button>
   </div>
@@ -3655,12 +3657,49 @@ function checkLlamadaURL(){
     hora: ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
     ts: Date.now()
   };
-  llamados.unshift(entry);
-  S('sec_llamados',llamados);
-  toast('📞 Llamada perdida agregada: '+(entry.nombre));
-  if(typeof buildSecre==='function')buildSecre();
-  sv('secre');
-  if(typeof secTab==='function')secTab('llamados');
+}
+
+// ── Importar de respaldo: lee el llamadas_perdidas.txt que arma MacroDroid
+// como backup (por si el registro automático vía navegador no se disparó) ──
+function importarLlamadasTxt(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const lineas = (e.target.result||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    llamados = L('sec_llamados',[]);
+    const ahora = new Date();
+    const SEIS_HS = 6*60*60*1000;
+    let agregados = 0, saltados = 0;
+    lineas.forEach(linea=>{
+      const partes = linea.split(' - ');
+      const telRaw = (partes[0]||'').trim();
+      const nombre = (partes.slice(1).join(' - ')||'').trim();
+      const telLimpio = telRaw.replace(/\D/g,'');
+      if(!telLimpio){ return; }
+      // Si ya hay un llamado con ese número en las últimas 6hs, asumimos que
+      // ya se registró por la vía normal (Chrome) y no lo duplicamos
+      const yaEsta = llamados.find(l=>(l.tel||'').replace(/\D/g,'')===telLimpio && (ahora.getTime()-(l.ts||0))<SEIS_HS);
+      if(yaEsta){ saltados++; return; }
+      const p = allPats().find(p=>(p.telefono||'').replace(/\D/g,'').endsWith(telLimpio.slice(-8)));
+      const entry = {
+        nombre: (nombre && nombre!=='') ? nombre : (p?p.nombre:'Llamada perdida (sin identificar)'),
+        tel: telRaw,
+        nota: 'Llamada perdida — importado de TXT (SIM trabajo)',
+        fecha: ahora.toLocaleDateString('es-AR'),
+        hora: ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
+        ts: Date.now()
+      };
+      llamados.unshift(entry);
+      agregados++;
+    });
+    S('sec_llamados', llamados);
+    ev.target.value = '';
+    toast('📄 Importados '+agregados+' llamado(s)'+(saltados?(' — '+saltados+' ya estaban'):''));
+    if(typeof buildSecre==='function')buildSecre();
+    if(typeof secTab==='function')secTab('llamados');
+  };
+  reader.readAsText(file);
 }
 
 // Init on load, y luego reintentamos traer lo último cada 45s
