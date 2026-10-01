@@ -3672,17 +3672,24 @@ async function dbxRestoreIfNeeded(){
       return;
     }
 
-    S('ep',data.extraPats||[]); S('pe',data.patEdits||{}); S('dxp',data.dxPropio||{});
-    S('dxi',data.dxIA||{}); S('n2',data.notas2||{}); S('tu',data.turnos||{});
-    S('co',data.cobros||[]); S('ga',data.gastos||[]); S('ria',data.resumenesIA||{}); S('napp',data.nextApps||{});
-    S('wa_env',data.waEnviados||{}); S('sec_llamados',data.secLlamados||[]);
-    S('tdel',data.turnosDel||[]); S('cdel',data.cobrosDel||[]); S('gdel',data.gastosDel||[]);
-    S('epdel',data.extraPatsDel||[]); S('n2del',data.notas2Del||[]); S('lldel',data.lldel||[]);
-    if(data.patImgs){ Object.entries(data.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
+    // Fusionamos lo que bajó de Dropbox con lo que ya teníamos localmente,
+    // en vez de pisarlo directamente: si acabamos de cargar algo acá y todavía
+    // no se subió, esto evita que se pierda al bajar la versión de otro dispositivo.
+    const merged = mergeBackup(data, buildBackupPayload());
+    S('ep',merged.extraPats||[]); S('pe',merged.patEdits||{}); S('dxp',merged.dxPropio||{});
+    S('dxi',merged.dxIA||{}); S('n2',merged.notas2||{}); S('tu',merged.turnos||{});
+    S('co',merged.cobros||[]); S('ga',merged.gastos||[]); S('ria',merged.resumenesIA||{}); S('napp',merged.nextApps||{});
+    S('wa_env',merged.waEnviados||{}); S('sec_llamados',merged.secLlamados||[]);
+    S('tdel',merged.turnosDel||[]); S('cdel',merged.cobrosDel||[]); S('gdel',merged.gastosDel||[]);
+    S('epdel',merged.extraPatsDel||[]); S('n2del',merged.notas2Del||[]); S('lldel',merged.lldel||[]);
+    if(merged.patImgs){ Object.entries(merged.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
     nextApps=L('napp',{}); waEnviados=L('wa_env',{}); llamados=L('sec_llamados',[]);
     if(remoteFecha) localStorage.setItem('dbx_last_fecha', remoteFecha);
+    // Si la fusión trajo algo local que Dropbox todavía no tenía, lo subimos
+    // de nuevo para que ambos dispositivos queden alineados cuanto antes.
+    dbxScheduleSave();
 
     dbxSetStatus('ok','Dropbox: sincronizado ✓');
     if(typeof buildHome==='function')buildHome();
