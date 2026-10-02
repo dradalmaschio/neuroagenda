@@ -2166,7 +2166,7 @@ function showPt(id){
       const nt=ce('div','nota-txt');nt.textContent=n.txt;nb.appendChild(nt);
       if(!window._sofiaMode){
         // Botón eliminar al pie de la nota, bien separado del editar
-        const dbwrap=ce('div');dbwrap.style.cssText='text-align:right;margin-top:10px;padding-top:8px;border-top:1px dashed var(--bd)';
+        const dbwrap=ce('div');dbwrap.style.cssText='text-align:left;margin-top:10px;padding-top:8px;border-top:1px dashed var(--bd)';
         const db=ce('button','edit-btn');db.style.cssText='font-size:10px;color:var(--rd);border-color:var(--rd)33;padding:2px 8px';db.textContent='🗑 Eliminar consulta';
         db.onclick=(function(ni,ib){return function(){delNota(id,ni,ib);};})(n.idx,n.isBase);
         dbwrap.appendChild(db);nb.appendChild(dbwrap);
@@ -2197,7 +2197,22 @@ function makeFieldBlock(pacId,field,label,val){
 }
 
 
-function addNota(id){const ta=document.getElementById('nc-'+id);const txt=ta?.value.trim();if(!txt)return;const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();if(!notas2[id])notas2[id]=[];notas2[id].push({fecha:f,texto:txt});S('n2',notas2);localStorage.removeItem('na4_draft_'+id);showPt(id);toast('Consulta guardada');}
+function addNota(id){
+  const ta=document.getElementById('nc-'+id);const txt=ta?.value.trim();if(!txt)return;
+  const f=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+  if(!notas2[id])notas2[id]=[];
+  // Si ya habías guardado algo de la consulta de HOY con este paciente (por
+  // ejemplo porque vas guardando de a poco para no perder nada mientras
+  // escribís), sumamos el texto nuevo a esa misma consulta en vez de crear
+  // una consulta separada por cada vez que tocás "Guardar".
+  const ultima = notas2[id][notas2[id].length-1];
+  if(ultima && ultima.fecha===f){
+    ultima.texto = (ultima.texto ? ultima.texto+'\n' : '') + txt;
+  } else {
+    notas2[id].push({fecha:f,texto:txt});
+  }
+  S('n2',notas2);localStorage.removeItem('na4_draft_'+id);showPt(id);toast('Consulta guardada');
+}
 
 // ── RESUMEN DE CONSULTA CON IA (grabación de voz) ─────────────
 function renderResumenIA(id){
@@ -3478,6 +3493,24 @@ function buildBackupPayload(){
   };
 }
 
+// Para notas de historia clínica: si dos notas de la MISMA fecha de un mismo
+// paciente resultan ser en realidad la misma consulta (una contiene el texto
+// de la otra, porque se fue guardando de a poco desde dos dispositivos),
+// las unimos en una sola en vez de dejarlas duplicadas.
+function dedupNotasMismaFecha(notas2obj){
+  const out={};
+  Object.entries(notas2obj||{}).forEach(([pacId,arr])=>{
+    const resultado=[];
+    (arr||[]).forEach(n=>{
+      const txt=(n.texto||'');
+      const i=resultado.findIndex(r=>r.fecha===n.fecha && (r.texto.includes(txt)||txt.includes(r.texto)));
+      if(i<0){ resultado.push({fecha:n.fecha, texto:txt}); }
+      else if(txt.length>resultado[i].texto.length){ resultado[i]=Object.assign({},n,{texto:txt}); }
+    });
+    out[pacId]=resultado;
+  });
+  return out;
+}
 // ── Fusión inteligente: combina remoto + local registro por registro,
 //    en vez de "todo o nada", para no perder datos cargados en otro dispositivo ──
 function mergeDict(remote, local){ return Object.assign({}, remote||{}, local||{}); }
@@ -3549,6 +3582,7 @@ function mergeBackup(remote, mine){
   let extraPats = mergeArrayById(remote.extraPats, mine.extraPats, 'id').filter(p=>!extraPatsDel.includes(p.id));
 
   let notas2 = mergeDictOfArrays(remote.notas2, mine.notas2);
+  notas2 = dedupNotasMismaFecha(notas2);
   Object.keys(notas2).forEach(pacId=>{
     notas2[pacId] = notas2[pacId].filter(n=>!notas2Del.includes(pacId+'|'+n.fecha+'|'+n.texto));
   });
@@ -3739,36 +3773,73 @@ function importarLlamadasTxt(ev){
   if(!file) return;
   const reader = new FileReader();
   reader.onload = function(e){
-    const lineas = (e.target.result||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    llamados = L('sec_llamados',[]);
     const ahora = new Date();
     const SEIS_HS = 6*60*60*1000;
     let agregados = 0, saltados = 0;
+
+    // A veces alguna escritura de MacroDroid queda sin el salto de línea entre
+    // llamados, y varios terminan pegados en un mismo renglón separados por
+    // comas (ej: "2026-09-30 22:04:21 , 1139724770 , 2026-10-01 09:39:10 , ...").
+    // Acá detectamos cada fecha dentro del renglón y lo partimos ahí, en vez
+    // de tratarlo como un solo llamado ilegible.
+    const PATRON_FECHA = /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/g;
+    const lineasCrudas = (e.target.result||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const lineas = [];
+    lineasCrudas.forEach(linea=>{
+      const idxs = []; let m;
+      const re = new RegExp(PATRON_FECHA);
+      while((m = re.exec(linea))) idxs.push(m.index);
+      if(idxs.length > 1){
+        idxs.push(linea.length);
+        for(let i=0;i<idxs.length-1;i++){
+          const trozo = linea.slice(idxs[i], idxs[i+1]).trim();
+          if(trozo) lineas.push(trozo);
+        }
+      } else {
+        lineas.push(linea);
+      }
+    });
+
+    llamados = L('sec_llamados',[]);
     lineas.forEach(linea=>{
-      const partes = linea.split(' - ');
-      const telRaw = (partes[0]||'').trim();
-      const nombre = (partes.slice(1).join(' - ')||'').trim();
+      linea = linea.replace(/,\s*$/,'').trim();
+      let telRaw='', nombre='', fechaTxt=null;
+      if(linea.includes(' - ') && !linea.includes(',')){
+        // Formato normal: "telefono - nombre"
+        const partes = linea.split(' - ');
+        telRaw = (partes[0]||'').trim();
+        nombre = (partes.slice(1).join(' - ')||'').trim();
+      } else {
+        // Formato "fecha , telefono" (lo que escribe MacroDroid con variables sueltas)
+        const partes = linea.split(',').map(p=>p.trim()).filter(Boolean);
+        const fechaParte = partes.find(p=>/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(p));
+        const telParte = partes.find(p=> p!==fechaParte && p.replace(/\D/g,'').length>=6 && p.replace(/\D/g,'').length<=15);
+        telRaw = telParte || (partes[0]||'');
+        fechaTxt = fechaParte || null;
+      }
       const telLimpio = telRaw.replace(/\D/g,'');
-      if(!telLimpio){ return; }
+      if(!telLimpio || telLimpio.length>15){ saltados++; return; } // sigue ilegible: se descarta en vez de guardar basura
       // Si ya hay un llamado con ese número en las últimas 6hs, asumimos que
       // ya se registró por la vía normal (Chrome) y no lo duplicamos
       const yaEsta = llamados.find(l=>(l.tel||'').replace(/\D/g,'')===telLimpio && (ahora.getTime()-(l.ts||0))<SEIS_HS);
       if(yaEsta){ saltados++; return; }
       const p = allPats().find(p=>(p.telefono||'').replace(/\D/g,'').endsWith(telLimpio.slice(-8)));
+      let fechaObj = ahora;
+      if(fechaTxt){ const d = new Date(fechaTxt.replace(' ','T')); if(!isNaN(d)) fechaObj = d; }
       const entry = {
         nombre: (nombre && nombre!=='') ? nombre : (p?p.nombre:'Llamada perdida (sin identificar)'),
         tel: telRaw,
-        nota: 'Llamada perdida — importado de TXT (SIM trabajo)',
-        fecha: ahora.toLocaleDateString('es-AR'),
-        hora: ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
-        ts: Date.now()
+        nota: '',
+        fecha: fechaObj.toLocaleDateString('es-AR'),
+        hora: fechaObj.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),
+        ts: fechaObj.getTime()
       };
       llamados.unshift(entry);
       agregados++;
     });
     S('sec_llamados', llamados);
     ev.target.value = '';
-    toast('📄 Importados '+agregados+' llamado(s)'+(saltados?(' — '+saltados+' ya estaban'):''));
+    toast('📄 Importados '+agregados+' llamado(s)'+(saltados?(' — '+saltados+' ya estaban o eran ilegibles'):''));
     if(typeof buildSecre==='function')buildSecre();
     if(typeof secTab==='function')secTab('llamados');
   };
