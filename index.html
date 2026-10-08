@@ -702,7 +702,19 @@ const GASTOS_HAB=[
   {label:'Hostinger',color:'#F59E0B',nota:'Hosting mensual'},
   {label:'Google Ads',color:'#EF4444',nota:'Publicidad mensual'},
 ];
-const S=(k,v)=>{try{localStorage.setItem('na4_'+k,JSON.stringify(v));}catch(e){alert('⚠️ Sin espacio para guardar. Los cambios NO se guardaron. Andá a Inicio → Mis datos → "Liberar espacio" antes de seguir cargando.');}if(typeof dbxScheduleSave==='function')dbxScheduleSave();};
+const S=(k,v)=>{
+  try{localStorage.setItem('na4_'+k,JSON.stringify(v));}
+  catch(e){
+    // Durante una bajada de Dropbox no mostramos alerta: la bajada se deshace sola y avisa por el estado
+    if(window._dbxApplying){ window._dbxApplyFailed=true; return false; }
+    window._storageFull=true;
+    alert('⚠️ Sin espacio para guardar. Los cambios NO se guardaron. Andá a Inicio → Mis datos → "Liberar espacio" antes de seguir cargando.');
+    return false; // no se programa subida: lo que hay guardado acá está desactualizado y no debe pisar Dropbox
+  }
+  window._storageFull=false;
+  if(!window._dbxApplying && typeof dbxScheduleSave==='function')dbxScheduleSave();
+  return true;
+};
 const L=(k,d)=>{try{const v=localStorage.getItem('na4_'+k);return v?JSON.parse(v):d}catch(e){return d}};
 let extraPats=L('ep',[]),patEdits=L('pe',{}),dxPropio=L('dxp',{}),dxIA=L('dxi',{});
 let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resumenesIA=L('ria',{});
@@ -3670,9 +3682,13 @@ async function dbxFetchRemote(token){
         'Dropbox-API-Arg': JSON.stringify({path: DBX_PATH})
       }
     });
-    if(!res.ok) return {};
+    if(!res.ok){
+      // Solo si Dropbox dice que el archivo realmente no existe tratamos el remoto como vacío.
+      if(res.status===409){ try{ const er=await res.json(); if(String(er&&er.error_summary||'').startsWith('path/not_found')) return {}; }catch(_){} }
+      return null; // falló la lectura: NO hay que subir nada encima
+    }
     return await res.json();
-  }catch(e){ return {}; }
+  }catch(e){ return null; }
 }
 
 async function dbxSaveNow(){
@@ -3685,7 +3701,10 @@ async function dbxSaveNow(){
     if(!token){ dbxSetStatus('err','No se pudo renovar la conexión a Dropbox'); dbxSaving=false; return; }
     // Traemos lo último que haya en Dropbox y encima ponemos nuestros campos locales,
     // así no pisamos cambios que hizo otro dispositivo en campos que nosotros no tocamos.
+    if(window._storageFull){ dbxSetStatus('err','Sin espacio en este dispositivo: no se sube nada para no pisar Dropbox'); dbxSaving=false; return; }
     const remote = await dbxFetchRemote(token);
+    if(remote===null){ dbxSetStatus('err','No se pudo leer Dropbox: no se guardó para no pisar datos'); dbxSaving=false; return; }
+    const seq0 = window._dbxSeq||0;
     const merged = mergeBackup(remote, buildBackupPayload());
     const payload = JSON.stringify(merged);
     const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
@@ -3703,9 +3722,12 @@ async function dbxSaveNow(){
       body: payload
     });
     if(res.ok){
-      localStorage.setItem('dbx_last_fecha', merged.fecha);
+      try{ localStorage.setItem('dbx_last_fecha', merged.fecha); }catch(e){}
       const now = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
       dbxSetStatus('ok','Dropbox: guardado ' + now + ' ✓');
+      // Si mientras subía se editó algo, queda pendiente y se vuelve a subir; si no, ya está todo al día
+      if((window._dbxSeq||0)===seq0){ try{ localStorage.removeItem('dbx_dirty'); }catch(e){} }
+      else { dbxSaving=false; dbxScheduleSave(); return; }
     } else {
       const err = await res.json();
       console.error('Dropbox error:', err);
@@ -3719,6 +3741,9 @@ async function dbxSaveNow(){
 }
 
 function dbxScheduleSave(){
+  // Cualquier cambio local deja marcado "pendiente de subir" hasta que Dropbox lo confirme
+  window._dbxSeq=(window._dbxSeq||0)+1;
+  try{ localStorage.setItem('dbx_dirty','1'); }catch(e){}
   clearTimeout(dbxSaveTimer);
   dbxSaveTimer = setTimeout(dbxSaveNow, 2000);
 }
@@ -3764,24 +3789,39 @@ async function dbxRestoreIfNeeded(){
       return;
     }
 
-    // Fusionamos lo que bajó de Dropbox con lo que ya teníamos localmente,
-    // en vez de pisarlo directamente: si acabamos de cargar algo acá y todavía
-    // no se subió, esto evita que se pierda al bajar la versión de otro dispositivo.
-    const merged = mergeBackup(data, buildBackupPayload());
-    S('ep',merged.extraPats||[]); S('pe',merged.patEdits||{}); S('dxp',merged.dxPropio||{});
-    S('dxi',merged.dxIA||{}); S('n2',merged.notas2||{}); S('tu',merged.turnos||{});
-    S('co',merged.cobros||[]); S('ga',merged.gastos||[]); S('ria',merged.resumenesIA||{}); S('napp',merged.nextApps||{});
-    S('wa_env',merged.waEnviados||{}); S('sec_llamados',merged.secLlamados||[]);
-    S('tdel',merged.turnosDel||[]); S('cdel',merged.cobrosDel||[]); S('gdel',merged.gastosDel||[]);
-    S('epdel',merged.extraPatsDel||[]); S('n2del',merged.notas2Del||[]); S('lldel',merged.lldel||[]);
-    if(merged.patImgs){ Object.entries(merged.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
+    // Si este dispositivo tiene cambios sin subir (dbx_dirty), fusionamos para no perderlos.
+    // Si está al día, Dropbox manda tal cual (así un dispositivo viejo no pisa lo nuevo).
+    const sinSincronizarNunca = !localFecha;
+    const hayPendiente = !!localStorage.getItem('dbx_dirty') || sinSincronizarNunca;
+    const merged = hayPendiente ? mergeBackup(data, buildBackupPayload()) : data;
+    const CLAVES = [['ep',merged.extraPats||[]],['pe',merged.patEdits||{}],['dxp',merged.dxPropio||{}],
+      ['dxi',merged.dxIA||{}],['n2',merged.notas2||{}],['tu',merged.turnos||{}],
+      ['co',merged.cobros||[]],['ga',merged.gastos||[]],['ria',merged.resumenesIA||{}],['napp',merged.nextApps||{}],
+      ['wa_env',merged.waEnviados||{}],['sec_llamados',merged.secLlamados||[]],
+      ['tdel',merged.turnosDel||[]],['cdel',merged.cobrosDel||[]],['gdel',merged.gastosDel||[]],
+      ['epdel',merged.extraPatsDel||[]],['n2del',merged.notas2Del||[]],['lldel',merged.lldel||[]]];
+    // Guardamos copia de lo que había, por si no hay lugar y hay que deshacer
+    const previo = {};
+    CLAVES.forEach(([k])=>{ previo[k]=localStorage.getItem('na4_'+k); });
+    window._dbxApplying=true; window._dbxApplyFailed=false;
+    CLAVES.forEach(([k,v])=>{ if(!window._dbxApplyFailed) S(k,v); });
+    if(window._dbxApplyFailed){
+      CLAVES.forEach(([k])=>{ try{ if(previo[k]===null) localStorage.removeItem('na4_'+k); else localStorage.setItem('na4_'+k,previo[k]); }catch(e){} });
+      window._dbxApplying=false;
+      dbxSetStatus('err','⚠️ Sin espacio en este dispositivo: NO se sincronizó. Borrá los datos del sitio en Chrome y reconectá Dropbox.');
+      dbxPulling=false;
+      return;
+    }
+    // Imágenes de pacientes: se guardan después de lo importante, sin romper nada si no entran.
+    // En el modo secretaria no hacen falta (y son lo que más espacio ocupa).
+    if(!window._sofiaMode && merged.patImgs){ Object.entries(merged.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
+    window._dbxApplying=false;
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
     notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
     nextApps=L('napp',{}); waEnviados=L('wa_env',{}); llamados=L('sec_llamados',[]);
     if(remoteFecha) localStorage.setItem('dbx_last_fecha', remoteFecha);
-    // Si la fusión trajo algo local que Dropbox todavía no tenía, lo subimos
-    // de nuevo para que ambos dispositivos queden alineados cuanto antes.
-    dbxScheduleSave();
+    // Solo se vuelve a subir si había algo local pendiente (evita que dos dispositivos se pasen el archivo sin parar)
+    if(hayPendiente && localStorage.getItem('dbx_dirty')) dbxScheduleSave();
 
     dbxSetStatus('ok','Dropbox: sincronizado ✓');
     if(typeof buildHome==='function')buildHome();
