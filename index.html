@@ -1551,7 +1551,8 @@ function confT(reservado){
     motivo:reservado?'':(document.getElementById('mmot').value.trim()),
     tipo:tipoFinal,
     reservado:!!reservado,
-    adHoc:!!mslot.adHoc
+    adHoc:!!mslot.adHoc,
+    ts:Date.now()
   };
   S('tu',turnos);
   document.getElementById('ov-turno').classList.add('h');
@@ -1622,6 +1623,8 @@ function delT(dk2,hora){
   if(turnos[dk2])delete turnos[dk2][hora];
   S('tu',turnos);
   const tdel=L('tdel',[]);const key=dk2+'|'+hora;if(!tdel.includes(key)){tdel.push(key);S('tdel',tdel);}
+  // Fecha de la cancelación: así un turno nuevo en el mismo horario, cargado DESPUÉS, no se borra
+  const tdts=L('tdelts',{});tdts[key]=Date.now();S('tdelts',tdts);
   buildAg();buildHome();toast('Turno cancelado');
 }
 
@@ -3370,6 +3373,7 @@ function importarTodo(){
         if(data.waEnviados) S('wa_env', data.waEnviados);
         if(data.secLlamados) S('sec_llamados', data.secLlamados);
         if(data.turnosDel) S('tdel', data.turnosDel);
+        if(data.turnosDelTs) S('tdelts', data.turnosDelTs);
         if(data.cobrosDel) S('cdel', data.cobrosDel);
         if(data.gastosDel) S('gdel', data.gastosDel);
         if(data.extraPatsDel) S('epdel', data.extraPatsDel);
@@ -3558,7 +3562,7 @@ function buildBackupPayload(){
     resumenesIA: L('ria',{}), nextApps: L('napp',{}),
     waEnviados: L('wa_env',{}), secLlamados: L('sec_llamados',[]),
     patImgs: patImgs,
-    turnosDel: L('tdel',[]), cobrosDel: L('cdel',[]), gastosDel: L('gdel',[]),
+    turnosDel: L('tdel',[]), turnosDelTs: L('tdelts',{}), cobrosDel: L('cdel',[]), gastosDel: L('gdel',[]),
     extraPatsDel: L('epdel',[]), notas2Del: L('n2del',[]), lldel: L('lldel',[])
   };
 }
@@ -3584,6 +3588,27 @@ function dedupNotasMismaFecha(notas2obj){
 // ── Fusión inteligente: combina remoto + local registro por registro,
 //    en vez de "todo o nada", para no perder datos cargados en otro dispositivo ──
 function mergeDict(remote, local){ return Object.assign({}, remote||{}, local||{}); }
+// Turnos: si el mismo horario está en los dos lados, gana el más reciente (sin fecha o empate: gana el local)
+function mergeTurnos(remote, local){
+  const out={};
+  const days=new Set([...Object.keys(remote||{}),...Object.keys(local||{})]);
+  days.forEach(dk=>{
+    const r=(remote||{})[dk]||{}, l=(local||{})[dk]||{};
+    const day=Object.assign({},r);
+    Object.entries(l).forEach(([h,t])=>{
+      const rt=r[h];
+      if(!rt){ day[h]=t; return; }
+      day[h] = ((rt.ts||0) > ((t&&t.ts)||0)) ? rt : t;
+    });
+    out[dk]=day;
+  });
+  return out;
+}
+function mergeMaxDict(a,b){
+  const out=Object.assign({},a||{});
+  Object.entries(b||{}).forEach(([k,v])=>{ out[k]=Math.max(out[k]||0,v||0); });
+  return out;
+}
 function mergeNestedDict(remote, local){
   const out = Object.assign({}, remote||{});
   Object.entries(local||{}).forEach(([k,v])=>{
@@ -3644,8 +3669,16 @@ function mergeBackup(remote, mine){
   const notas2Del = mergeArrayUnique(remote.notas2Del, mine.notas2Del);
   const lldel = mergeArrayUnique(remote.lldel, mine.lldel);
 
-  let turnos = mergeNestedDict(remote.turnos, mine.turnos);
-  turnosDel.forEach(k=>{ const idx=k.lastIndexOf('|'); const dk=k.slice(0,idx), h=k.slice(idx+1); if(turnos[dk])delete turnos[dk][h]; });
+  let turnos = mergeTurnos(remote.turnos, mine.turnos);
+  const turnosDelTs = mergeMaxDict(remote.turnosDelTs, mine.turnosDelTs);
+  turnosDel.forEach(k=>{
+    const idx=k.lastIndexOf('|'); const dk=k.slice(0,idx), h=k.slice(idx+1);
+    const t = turnos[dk] && turnos[dk][h];
+    if(!t) return;
+    // Un turno cargado DESPUÉS de la cancelación de ese horario se conserva.
+    // Los turnos viejos (sin fecha) se siguen borrando como antes.
+    if(!t.ts || t.ts <= (turnosDelTs[k]||0)) delete turnos[dk][h];
+  });
 
   let cobros = mergeArrayById(remote.cobros, mine.cobros, 'id').filter(c=>!cobrosDel.includes(c.id));
   let gastos = mergeArrayById(remote.gastos, mine.gastos, 'id').filter(g=>!gastosDel.includes(g.id));
@@ -3668,7 +3701,7 @@ function mergeBackup(remote, mine){
     waEnviados: mergeDict(remote.waEnviados, mine.waEnviados),
     secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados).filter(x=>!lldel.includes(JSON.stringify(x))),
     patImgs: mergeDictOfArrays(remote.patImgs, mine.patImgs),
-    turnosDel, cobrosDel, gastosDel, extraPatsDel, notas2Del, lldel
+    turnosDel, turnosDelTs, cobrosDel, gastosDel, extraPatsDel, notas2Del, lldel
   };
 }
 
@@ -3798,7 +3831,7 @@ async function dbxRestoreIfNeeded(){
       ['dxi',merged.dxIA||{}],['n2',merged.notas2||{}],['tu',merged.turnos||{}],
       ['co',merged.cobros||[]],['ga',merged.gastos||[]],['ria',merged.resumenesIA||{}],['napp',merged.nextApps||{}],
       ['wa_env',merged.waEnviados||{}],['sec_llamados',merged.secLlamados||[]],
-      ['tdel',merged.turnosDel||[]],['cdel',merged.cobrosDel||[]],['gdel',merged.gastosDel||[]],
+      ['tdel',merged.turnosDel||[]],['tdelts',merged.turnosDelTs||{}],['cdel',merged.cobrosDel||[]],['gdel',merged.gastosDel||[]],
       ['epdel',merged.extraPatsDel||[]],['n2del',merged.notas2Del||[]],['lldel',merged.lldel||[]]];
     // Guardamos copia de lo que había, por si no hay lugar y hay que deshacer
     const previo = {};
