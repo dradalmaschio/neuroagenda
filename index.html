@@ -720,7 +720,7 @@ const S=(k,v)=>{
 };
 const L=(k,d)=>{try{const v=localStorage.getItem('na4_'+k);return v?JSON.parse(v):d}catch(e){return d}};
 let extraPats=L('ep',[]),patEdits=L('pe',{}),dxPropio=L('dxp',{}),dxIA=L('dxi',{});
-let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resumenesIA=L('ria',{});
+let notas2=L('n2',{}),turnos=L('tu',{}),cobros=L('co',[]),gastos=L('ga',[]),resumenesIA=L('ria',{}),chatsIA=L('ich',{});
 
 // ── Saneamiento de cobros históricos ────────────────────────────
 // Corrige saldos negativos (bug anterior donde cobrado > total preset)
@@ -2259,6 +2259,7 @@ function showPt(id){
 
   // Nueva consulta
   det.appendChild(renderResumenIA(id));
+  det.appendChild(renderChatsIA(id));
   sv('detail');
 }
 
@@ -2324,6 +2325,43 @@ function renderResumenIA(id){
   return wrap;
 }
 
+function renderChatsIA(id){
+  const wrap=ce('div');
+  const st=ce('div','stitle');st.textContent='Consultas con la IA sobre este paciente';wrap.appendChild(st);
+  const h=(chatsIA[id]||[]).slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(!h.length){const nd=ce('div');nd.style.cssText='color:var(--mt2);font-size:13px;margin-top:8px';nd.textContent='Todav\u00eda no hay consultas guardadas. Se guardan solas cuando consult\u00e1s a la IA desde este paciente.';wrap.appendChild(nd);return wrap;}
+  const dias={};
+  h.forEach(x=>{const d=new Date(x.ts).toLocaleDateString('es-AR');(dias[d]=dias[d]||[]).push(x);});
+  Object.keys(dias).reverse().forEach(function(d){
+    const msgs=dias[d];
+    const card=ce('div','nota-block');card.style.cssText='margin-top:8px';
+    const nf=ce('div','nota-fecha');
+    const sp=ce('span');sp.textContent=d+' \u00b7 '+Math.ceil(msgs.length/2)+' consulta(s)';nf.appendChild(sp);
+    const bd=ce('button','edit-btn');bd.textContent='\uD83D\uDDD1 Borrar';
+    bd.onclick=function(){delChatIA(id,msgs.map(function(m){return m.id;}));};
+    nf.appendChild(bd);card.appendChild(nf);
+    const body=ce('div');body.style.cssText='display:none;margin-top:6px';
+    msgs.forEach(function(m){
+      const b=ce('div');b.style.cssText='white-space:pre-wrap;font-size:13px;margin:6px 0;padding:6px 8px;border-radius:8px;background:'+(m.r==='user'?'var(--sf)':'transparent')+';border-left:3px solid '+(m.r==='user'?'var(--ac)':'var(--bd)');
+      b.textContent=(m.r==='user'?'Sandra: ':'IA: ')+String(m.c).replace(/<[^>]+>/g,'');
+      body.appendChild(b);
+    });
+    const tg=ce('button','edit-btn');tg.style.cssText='margin-top:6px;font-size:11px';tg.textContent='Ver conversaci\u00f3n';
+    tg.onclick=function(){const sh=body.style.display==='none';body.style.display=sh?'block':'none';tg.textContent=sh?'Ocultar':'Ver conversaci\u00f3n';};
+    card.appendChild(tg);card.appendChild(body);wrap.appendChild(card);
+  });
+  const cont=ce('button','edit-btn');cont.style.cssText='margin-top:10px';cont.textContent='\u2726 Seguir hablando con la IA sobre este paciente';
+  cont.onclick=function(){iaWith(id);};wrap.appendChild(cont);
+  return wrap;
+}
+function delChatIA(pacId,ids){
+  if(!confirm('\u00bfBorrar estas consultas con la IA?'))return;
+  chatsIA[pacId]=(chatsIA[pacId]||[]).filter(function(m){return ids.indexOf(m.id)<0;});
+  S('ich',chatsIA);
+  const del=L('ichdel',[]);ids.forEach(function(i){if(del.indexOf(i)<0)del.push(i);});S('ichdel',del);
+  if(typeof dbxScheduleSave==='function')dbxScheduleSave();
+  showPt(pacId);toast('Consultas eliminadas');
+}
 function delResumenIA(pacId,rid){
   if(!confirm('¿Borrar este resumen de IA?'))return;
   if(resumenesIA[pacId]){resumenesIA[pacId]=resumenesIA[pacId].filter(function(r){return r.id!==rid;});S('ria',resumenesIA);}
@@ -3034,13 +3072,47 @@ function buildStats(){
     sorted.map(([d,n])=>'<div class="dr" onclick="setPF(\''+d+'\');sv(\'pacs\')"><div class="dd" style="background:'+dc2(d)+'"></div><div class="dname2">'+dl2(d)+'</div><div class="dbw"><div class="db" style="width:'+Math.round(n/mx*100)+'%;background:'+dc2(d)+'"></div></div><div class="dn3">'+n+'</div></div>').join('');
 }
 
-function iaWith(id){iaCtx=getPat(id);document.getElementById('cname').textContent=iaCtx.nombre;document.getElementById('ctxbar').style.display='flex';sv('ia');}
-function clrCtx(){iaCtx=null;document.getElementById('ctxbar').style.display='none';}
+const IA_INTRO='<div class="mlbl">ASISTENTE</div>Hola Sandra. Pod\u00e9s preguntarme sobre cualquier paciente, discutir diagn\u00f3sticos diferenciales o bibliograf\u00eda. Tambi\u00e9n pod\u00e9s contarme tu criterio para un diagn\u00f3stico y lo incorporo.';
+function iaResetView(){
+  const m=document.getElementById('msgs');
+  m.innerHTML='<div class="msg a">'+IA_INTRO+'</div>';chatH=[];
+}
+function iaFechaTxt(ts){return new Date(ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function iaCargarHist(id){
+  iaResetView();
+  const h=(chatsIA[id]||[]).slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(!h.length)return;
+  const m=document.getElementById('msgs');
+  const sep=document.createElement('div');sep.style.cssText='text-align:center;font-size:11px;color:var(--mt2);margin:6px 0';
+  sep.textContent='— Conversaciones anteriores guardadas de este paciente —';m.appendChild(sep);
+  let ultDia='';
+  h.forEach(x=>{
+    const dia=new Date(x.ts).toLocaleDateString('es-AR');
+    if(dia!==ultDia){ultDia=dia;const d=document.createElement('div');d.style.cssText='text-align:center;font-size:10.5px;color:var(--mt2);margin:4px 0';d.textContent=dia;m.appendChild(d);}
+    const div=document.createElement('div');div.className='msg '+(x.r==='user'?'u':'a');
+    div.innerHTML=x.r==='user'?x.c:'<div class="mlbl">ASISTENTE</div>'+x.c;
+    m.appendChild(div);
+  });
+  chatH=h.slice(-20).map(x=>({r:x.r,c:x.c}));
+  const fin=document.createElement('div');fin.style.cssText='text-align:center;font-size:11px;color:var(--mt2);margin:6px 0';fin.textContent='— Nueva consulta —';m.appendChild(fin);
+  setTimeout(()=>fin.scrollIntoView({block:'end'}),50);
+}
+function iaGuardar(pacId,u,a){
+  if(!pacId)return;
+  const t=Date.now();
+  if(!chatsIA[pacId])chatsIA[pacId]=[];
+  chatsIA[pacId].push({id:'c'+t+'u',ts:t,r:'user',c:u},{id:'c'+t+'a',ts:t+1,r:'assistant',c:a});
+  S('ich',chatsIA);
+  if(typeof dbxScheduleSave==='function')dbxScheduleSave();
+}
+function iaWith(id){iaCtx=getPat(id);document.getElementById('cname').textContent=iaCtx.nombre;document.getElementById('ctxbar').style.display='flex';iaCargarHist(id);sv('ia');}
+function clrCtx(){iaCtx=null;document.getElementById('ctxbar').style.display='none';iaResetView();}
 function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
 function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
 async function sendMsg(){
   const inp=document.getElementById('cin');const txt=inp.value.trim();if(!txt)return;
   inp.value='';inp.style.height='auto';document.getElementById('sbtn').disabled=true;
+  const _pacEnvio=iaCtx?iaCtx.id:null;
   aMsg('u',txt);const lid=aMsg('a','<div class="dots"><span>\u25cf</span><span>\u25cf</span><span>\u25cf</span></div>');
   let sys='Sos un asistente neurol\u00f3gico para la Dra. Sandra Dal Maschio, neuróloga en Buenos Aires. Respond\u00e9 en espa\u00f1ol, cl\u00ednico y conciso. Ayud\u00e1 con diagn\u00f3sticos diferenciales, criterios y bibliograf\u00eda. Aprend\u00e9 y record\u00e1 los criterios que ella mencione.';
   if(iaCtx){
@@ -3053,6 +3125,7 @@ async function sendMsg(){
     const r=await fetch('https://neuroagenda-ai-proxy.dradalmaschio.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,system:sys,messages:[...chatH.map(m=>({role:m.r,content:m.c})),{role:'user',content:txt}]})});
     const data=await r.json();const rep=data.content?.map(c=>c.text||'').join('')||'Error.';
     updMsg(lid,rep);chatH.push({r:'user',c:txt},{r:'assistant',c:rep});if(chatH.length>20)chatH=chatH.slice(-20);
+    if(_pacEnvio&&data.content)iaGuardar(_pacEnvio,txt,rep);
   }catch(e){updMsg(lid,'Error de conexi\u00f3n.');}
   document.getElementById('sbtn').disabled=false;
 }
@@ -3308,6 +3381,7 @@ async function exportarTodo(){
     cobros:    L('co',[]),
     gastos:    L('ga',[]),
     resumenesIA: L('ria',{}),
+    chatsIA: L('ich',{}), chatsIADel: L('ichdel',[]),
     nextApps:  L('napp',{}),
     waEnviados: L('wa_env',{}),
     secLlamados: L('sec_llamados',[]),
@@ -3387,6 +3461,8 @@ function importarTodo(){
         if(data.cobros)    S('co', data.cobros);
         if(data.gastos)    S('ga', data.gastos);
         if(data.resumenesIA) S('ria', data.resumenesIA);
+        if(data.chatsIA) S('ich', data.chatsIA);
+        if(data.chatsIADel) S('ichdel', data.chatsIADel);
         if(data.nextApps)  S('napp', data.nextApps);
         if(data.waEnviados) S('wa_env', data.waEnviados);
         if(data.secLlamados) S('sec_llamados', data.secLlamados);
@@ -3399,7 +3475,7 @@ function importarTodo(){
         if(data.lldel) S('lldel', data.lldel);
         // Reload state
         extraPats = L('ep',[]);patEdits=L('pe',{});dxPropio=L('dxp',{});dxIA=L('dxi',{});
-        notas2=L('n2',{});turnos=L('tu',{});cobros=L('co',[]);gastos=L('ga',[]);resumenesIA=L('ria',{});
+        notas2=L('n2',{});turnos=L('tu',{});cobros=L('co',[]);gastos=L('ga',[]);resumenesIA=L('ria',{});chatsIA=L('ich',{});
         // Restore per-patient images
         if(data.patImgs){Object.entries(data.patImgs).forEach(([k,v])=>{try{localStorage.setItem('na5_imgs_'+k,JSON.stringify(v));}catch(e){}});}
         buildHome();buildPills();rpts();buildAg();buildStats();renderFin();
@@ -3577,7 +3653,7 @@ function buildBackupPayload(){
     version: 5, fecha: new Date().toISOString(),
     extraPats: L('ep',[]), patEdits: L('pe',{}), dxPropio: L('dxp',{}), dxIA: L('dxi',{}),
     notas2: L('n2',{}), turnos: L('tu',{}), cobros: L('co',[]), gastos: L('ga',[]),
-    resumenesIA: L('ria',{}), nextApps: L('napp',{}),
+    resumenesIA: L('ria',{}), chatsIA: L('ich',{}), chatsIADel: L('ichdel',[]), nextApps: L('napp',{}),
     waEnviados: L('wa_env',{}), secLlamados: L('sec_llamados',[]),
     patImgs: patImgs,
     turnosDel: L('tdel',[]), turnosDelTs: L('tdelts',{}), cobrosDel: L('cdel',[]), gastosDel: L('gdel',[]),
@@ -3633,6 +3709,15 @@ function mergeNestedDict(remote, local){
     out[k] = (v && typeof v==='object' && !Array.isArray(v)) ? Object.assign({}, out[k]||{}, v) : v;
   });
   return out;
+}
+function chatsIAMerge(remote, mine){
+  const del=new Set([...(remote.chatsIADel||[]),...(mine.chatsIADel||[])]);
+  const m=mergeDictOfArrays(remote.chatsIA, mine.chatsIA);
+  Object.keys(m).forEach(k=>{
+    const seen=new Set();
+    m[k]=m[k].filter(x=>x&&x.id&&!del.has(x.id)&&!seen.has(x.id)&&seen.add(x.id)).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  });
+  return m;
 }
 function mergeDictOfArrays(remote, local){
   const out = Object.assign({}, remote||{});
@@ -3715,6 +3800,8 @@ function mergeBackup(remote, mine){
     dxIA: mergeDict(remote.dxIA, mine.dxIA),
     notas2, turnos, cobros, gastos,
     resumenesIA: mergeDict(remote.resumenesIA, mine.resumenesIA),
+    chatsIA: chatsIAMerge(remote, mine),
+    chatsIADel: mergeArrayUnique(remote.chatsIADel, mine.chatsIADel),
     nextApps: mergeDict(remote.nextApps, mine.nextApps),
     waEnviados: mergeDict(remote.waEnviados, mine.waEnviados),
     secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados).filter(x=>!lldel.includes(JSON.stringify(x))),
@@ -3847,7 +3934,7 @@ async function dbxRestoreIfNeeded(){
     const merged = hayPendiente ? mergeBackup(data, buildBackupPayload()) : data;
     const CLAVES = [['ep',merged.extraPats||[]],['pe',merged.patEdits||{}],['dxp',merged.dxPropio||{}],
       ['dxi',merged.dxIA||{}],['n2',merged.notas2||{}],['tu',merged.turnos||{}],
-      ['co',merged.cobros||[]],['ga',merged.gastos||[]],['ria',merged.resumenesIA||{}],['napp',merged.nextApps||{}],
+      ['co',merged.cobros||[]],['ga',merged.gastos||[]],['ria',merged.resumenesIA||{}],['ich',merged.chatsIA||{}],['ichdel',merged.chatsIADel||[]],['napp',merged.nextApps||{}],
       ['wa_env',merged.waEnviados||{}],['sec_llamados',merged.secLlamados||[]],
       ['tdel',merged.turnosDel||[]],['tdelts',merged.turnosDelTs||{}],['cdel',merged.cobrosDel||[]],['gdel',merged.gastosDel||[]],
       ['epdel',merged.extraPatsDel||[]],['n2del',merged.notas2Del||[]],['lldel',merged.lldel||[]]];
@@ -3868,7 +3955,7 @@ async function dbxRestoreIfNeeded(){
     if(!window._sofiaMode && merged.patImgs){ Object.entries(merged.patImgs).forEach(([k,v])=>{ try{ localStorage.setItem('na5_imgs_'+k, JSON.stringify(v)); }catch(e){} }); }
     window._dbxApplying=false;
     extraPats=L('ep',[]); patEdits=L('pe',{}); dxPropio=L('dxp',{}); dxIA=L('dxi',{});
-    notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{});
+    notas2=L('n2',{}); turnos=L('tu',{}); cobros=L('co',[]); gastos=L('ga',[]); resumenesIA=L('ria',{}); chatsIA=L('ich',{});
     nextApps=L('napp',{}); waEnviados=L('wa_env',{}); llamados=L('sec_llamados',[]);
     if(remoteFecha) localStorage.setItem('dbx_last_fecha', remoteFecha);
     // Solo se vuelve a subir si había algo local pendiente (evita que dos dispositivos se pasen el archivo sin parar)
