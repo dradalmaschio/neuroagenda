@@ -365,6 +365,10 @@ input,textarea,select{border-color:rgba(176,107,255,.3)!important}
         <div class="lic" style="background:rgba(34,197,94,.13)">🧹</div>
         <div><strong style="font-size:13px">Liberar espacio</strong><div style="font-size:11px;color:var(--mt)">Sube fotos viejas a Dropbox</div></div>
       </button>
+      <button class="abtn2 sofia-hidden" onclick="quitarFotosRepetidas()">
+        <div class="lic" style="background:rgba(245,158,11,.13)">🖼️</div>
+        <div><strong style="font-size:13px">Quitar fotos repetidas</strong><div style="font-size:11px;color:var(--mt)">Deja una sola copia de cada foto</div></div>
+      </button>
     </div>
     <div style="font-size:11px;color:var(--mt2);margin-top:8px;line-height:1.5">
       Los datos se guardan en este navegador. Export&#225; el backup y mand&#225;telo por WhatsApp para pasarlo a otro dispositivo.
@@ -3328,6 +3332,40 @@ checkTurnosProximos();
 
 
 // ── EXPORT / IMPORT ─────────────────────────────────────────
+async function quitarFotosRepetidas(){
+  if(!dbxIsConnected()){alert('Conect\u00e1 Dropbox primero (indicador de arriba) y volv\u00e9 a tocar el bot\u00f3n, as\u00ed se borran tambi\u00e9n los archivos repetidos de Dropbox.');return;}
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('na5_imgs_'))keys.push(k);}
+  const plan=[]; let extras=0;
+  keys.forEach(k=>{
+    let imgs; try{imgs=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){return;}
+    const vistos=new Map(), keep=[], quitar=[];
+    imgs.forEach(img=>{
+      const id=img.thumb?('t:'+img.thumb):(img.path?('p:'+img.path):(img.src?('s:'+img.src):null));
+      if(id&&vistos.has(id)){quitar.push(img);}else{if(id)vistos.set(id,img);keep.push(img);}
+    });
+    if(quitar.length){plan.push({k,keep,quitar});extras+=quitar.length;}
+  });
+  if(!extras){alert('No hay fotos repetidas en este dispositivo.');return;}
+  if(!confirm('Encontré '+extras+' fotos repetidas en '+plan.length+' pacientes.\nSe deja UNA copia de cada foto y se borran las demás (también de Dropbox, para liberar lugar).\n\n¿Seguir?'))return;
+  const conDbx=dbxIsConnected();
+  let token=null; if(conDbx){try{token=await getDbxAccessToken();}catch(e){}}
+  const del=L('imgdel',[]); let borradosDbx=0;
+  for(const pl of plan){
+    const rutasKeep=new Set(pl.keep.filter(x=>x.path).map(x=>x.path));
+    for(const x of pl.quitar){
+      if(x.path&&!rutasKeep.has(x.path)){
+        if(!del.includes(x.path))del.push(x.path);
+        if(token){await dbxDeleteFile(token,x.path);borradosDbx++;}
+      }
+    }
+    try{localStorage.setItem(pl.k,JSON.stringify(pl.keep));}catch(e){}
+  }
+  S('imgdel',del);
+  if(typeof dbxScheduleSave==='function')dbxScheduleSave();
+  if(currentPatId)showPt(currentPatId);
+  alert('Listo: se quitaron '+extras+' fotos repetidas'+(token?(' y se borraron '+borradosDbx+' archivos de Dropbox.'):'. Dropbox no estaba conectado: conectalo y volvé a tocar el botón para borrar también los archivos de Dropbox.'));
+}
 async function liberarEspacioFotos(){
   if(!dbxIsConnected()){ alert('Necesitás Dropbox conectado para hacer esto. Conectate desde el indicador de arriba e intentá de nuevo.'); return; }
   const token = await getDbxAccessToken();
@@ -3343,6 +3381,8 @@ async function liberarEspacioFotos(){
     for(let i=0;i<imgs.length;i++){
       const img=imgs[i];
       if(img.src && !img.path){
+        // Si ya existe esa misma foto subida a Dropbox (mismo nombre y fecha), no la subimos de nuevo: se descarta la copia vieja
+        if(imgs.some((o,j)=>j!==i&&o.path&&(o.name||'')===(img.name||'')&&(o.fecha||'')===(img.fecha||''))){imgs[i]=null;cambiado=true;continue;}
         total++;
         try{
           const ts=Date.now()+'_'+i;
@@ -3359,7 +3399,7 @@ async function liberarEspacioFotos(){
         }catch(e){ fallidas++; }
       }
     }
-    if(cambiado){ try{localStorage.setItem(k,JSON.stringify(imgs));}catch(e){ /* si sigue sin espacio, seguimos con las demás */ } }
+    if(cambiado){ imgs=imgs.filter(Boolean); try{localStorage.setItem(k,JSON.stringify(imgs));}catch(e){ /* si sigue sin espacio, seguimos con las demás */ } }
   }
   if(total===0){ alert('No hay fotos viejas para migrar. Ya está todo optimizado.'); return; }
   alert('Listo: '+migradas+' de '+total+' fotos migradas a Dropbox'+(fallidas?' ('+fallidas+' no se pudieron subir, revisá la conexión)':'')+'. Ahora hay mucho más espacio libre.');
@@ -3385,7 +3425,7 @@ async function exportarTodo(){
     nextApps:  L('napp',{}),
     waEnviados: L('wa_env',{}),
     secLlamados: L('sec_llamados',[]),
-    patImgs:   patImgs,
+    patImgs:   patImgs, imgsDel: L('imgdel',[]),
   };
   const json = JSON.stringify(backup);
   const fecha = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');
@@ -3473,6 +3513,7 @@ function importarTodo(){
         if(data.extraPatsDel) S('epdel', data.extraPatsDel);
         if(data.notas2Del) S('n2del', data.notas2Del);
         if(data.lldel) S('lldel', data.lldel);
+        if(data.imgsDel) S('imgdel', data.imgsDel);
         // Reload state
         extraPats = L('ep',[]);patEdits=L('pe',{});dxPropio=L('dxp',{});dxIA=L('dxi',{});
         notas2=L('n2',{});turnos=L('tu',{});cobros=L('co',[]);gastos=L('ga',[]);resumenesIA=L('ria',{});chatsIA=L('ich',{});
@@ -3657,7 +3698,7 @@ function buildBackupPayload(){
     waEnviados: L('wa_env',{}), secLlamados: L('sec_llamados',[]),
     patImgs: patImgs,
     turnosDel: L('tdel',[]), turnosDelTs: L('tdelts',{}), cobrosDel: L('cdel',[]), gastosDel: L('gdel',[]),
-    extraPatsDel: L('epdel',[]), notas2Del: L('n2del',[]), lldel: L('lldel',[])
+    extraPatsDel: L('epdel',[]), notas2Del: L('n2del',[]), lldel: L('lldel',[]), imgsDel: L('imgdel',[])
   };
 }
 
@@ -3709,6 +3750,19 @@ function mergeNestedDict(remote, local){
     out[k] = (v && typeof v==='object' && !Array.isArray(v)) ? Object.assign({}, out[k]||{}, v) : v;
   });
   return out;
+}
+// Fotos: unión por identidad. Una foto "vieja" (con src, sin path) que ya fue migrada a Dropbox
+// (misma name+fecha con path) no vuelve a aparecer; y lo borrado a propósito (imgsDel) no resucita.
+function mergeImgs(remote, mine){
+  const del=new Set([...(remote.imgsDel||[]),...(mine.imgsDel||[])]);
+  const m=mergeDictOfArrays(remote.patImgs, mine.patImgs);
+  Object.keys(m).forEach(k=>{
+    let arr=(m[k]||[]).filter(x=>x&&!(x.path&&del.has(x.path)));
+    const migradas=new Set(arr.filter(x=>x.path).map(x=>(x.name||'')+'|'+(x.fecha||'')));
+    arr=arr.filter(x=>x.path||!(x.src&&migradas.has((x.name||'')+'|'+(x.fecha||''))));
+    m[k]=arr;
+  });
+  return m;
 }
 function chatsIAMerge(remote, mine){
   const del=new Set([...(remote.chatsIADel||[]),...(mine.chatsIADel||[])]);
@@ -3805,7 +3859,8 @@ function mergeBackup(remote, mine){
     nextApps: mergeDict(remote.nextApps, mine.nextApps),
     waEnviados: mergeDict(remote.waEnviados, mine.waEnviados),
     secLlamados: mergeArrayUnique(remote.secLlamados, mine.secLlamados).filter(x=>!lldel.includes(JSON.stringify(x))),
-    patImgs: mergeDictOfArrays(remote.patImgs, mine.patImgs),
+    patImgs: mergeImgs(remote, mine),
+    imgsDel: mergeArrayUnique(remote.imgsDel, mine.imgsDel),
     turnosDel, turnosDelTs, cobrosDel, gastosDel, extraPatsDel, notas2Del, lldel
   };
 }
@@ -3937,7 +3992,7 @@ async function dbxRestoreIfNeeded(){
       ['co',merged.cobros||[]],['ga',merged.gastos||[]],['ria',merged.resumenesIA||{}],['ich',merged.chatsIA||{}],['ichdel',merged.chatsIADel||[]],['napp',merged.nextApps||{}],
       ['wa_env',merged.waEnviados||{}],['sec_llamados',merged.secLlamados||[]],
       ['tdel',merged.turnosDel||[]],['tdelts',merged.turnosDelTs||{}],['cdel',merged.cobrosDel||[]],['gdel',merged.gastosDel||[]],
-      ['epdel',merged.extraPatsDel||[]],['n2del',merged.notas2Del||[]],['lldel',merged.lldel||[]]];
+      ['epdel',merged.extraPatsDel||[]],['n2del',merged.notas2Del||[]],['lldel',merged.lldel||[]],['imgdel',merged.imgsDel||[]]];
     // Guardamos copia de lo que había, por si no hay lugar y hay que deshacer
     const previo = {};
     CLAVES.forEach(([k])=>{ previo[k]=localStorage.getItem('na4_'+k); });
